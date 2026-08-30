@@ -12,6 +12,9 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%230f0d0a'/%3E%3Cpath d='M12 5v14M8 19h8M6.5 8h11M6.5 8l-2.5 5a2.4 2.4 0 004.8 0zM17.5 8l2.5 5a2.4 2.4 0 01-4.8 0z' fill='none' stroke='%23c9a574' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap');
 
@@ -308,10 +311,34 @@ input,textarea{font-family:inherit;} ul{margin:0; padding:0;} li{list-style:none
 .cert-name{font-family:var(--font-display); font-size:26px; color:var(--gold); margin-bottom:10px;}
 .cert-body{font-size:13.5px; color:var(--text-muted); max-width:400px; margin-bottom:14px;}
 .cert-date{font-size:11.5px; color:var(--text-muted); letter-spacing:.04em;}
+
+.auth-wrap{min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background:var(--bg);}
+.auth-card{width:100%; max-width:400px; background:var(--bg-raised); border:1px solid var(--border-strong); border-radius:var(--radius); box-shadow:var(--shadow); padding:34px 30px;}
+.auth-brand{display:flex; align-items:center; gap:9px; font-family:var(--font-display); font-size:20px; font-weight:600; color:var(--text); margin-bottom:22px;}
+.auth-brand .icon{width:22px; height:22px; color:var(--gold);}
+.auth-card h2{font-size:22px; margin-bottom:6px;}
+.auth-card .auth-sub{font-size:14px; color:var(--text-muted); margin-bottom:22px;}
+.auth-form{display:flex; flex-direction:column; gap:12px;}
+.auth-form input{padding:13px 16px; border-radius:var(--radius-sm); border:1.5px solid var(--border-strong); background:var(--bg-raised-2); color:var(--text); font-size:15px; width:100%;}
+.auth-form input:focus{outline:none; border-color:var(--gold);}
+.auth-form .btn{justify-content:center; margin-top:6px;}
+.auth-error{background:var(--warning-soft); color:var(--warning); font-size:13.5px; padding:10px 14px; border-radius:var(--radius-sm); margin-bottom:14px;}
+.auth-switch{margin-top:20px; font-size:14px; color:var(--text-muted); text-align:center;}
+.auth-switch button{color:var(--gold); font-weight:600;}
+.auth-forgot{text-align:right; margin-top:-4px;}
+.auth-forgot button{font-size:13px; color:var(--text-muted); text-decoration:underline;}
+.auth-forgot button:hover{color:var(--gold);}
+.auth-pending .icon{width:40px; height:40px; color:var(--gold); margin-bottom:16px;}
+.auth-loading{color:var(--text-muted); font-size:14px; text-align:center;}
+.admin-list{display:flex; flex-direction:column; gap:10px; margin-top:18px;}
+.admin-row{display:flex; align-items:center; justify-content:space-between; gap:14px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px 18px;}
+.admin-row .small{color:var(--text-muted);}
+.admin-empty{color:var(--text-muted); font-size:14px; margin-top:14px;}
 </style>
 </head>
 <body>
-<div id="app-root"></div>
+<div id="auth-root" class="auth-wrap"><div class="auth-loading">Carregando…</div></div>
+<div id="app-root" style="display:none"></div>
 <script>
 const I = {
   scale:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v18M7 21h10M5 7h14M5 7l-3 6a3 3 0 006 0zM19 7l3 6a3 3 0 01-6 0z"/></svg>',
@@ -331,10 +358,150 @@ const I = {
   cert:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="9" r="5"/><path d="M9 13.5L8 21l4-2 4 2-1-7.5"/></svg>',
   seal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="5"/><path d="M12 4v2M12 18v2M4 12h2M18 12h2"/></svg>',
   home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z"/></svg>',
-  alert:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>'
+  alert:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>',
+  logout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>',
+  users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>'
 };
 const ic = (n,cls='') => `<span class="icon ${cls}">${I[n]}</span>`;
 const escAttr = (s='') => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+
+/* ============ AUTENTICAÇÃO (Firebase) ============
+   1) Crie um projeto gratuito em https://console.firebase.google.com
+   2) Ative Authentication → Sign-in method → E-mail/senha
+   3) Crie um Firestore Database (modo produção)
+   4) Em Firestore → Regras, cole as regras de segurança (peça ao Claude,
+      ou veja o arquivo FIRESTORE_RULES.md deste repositório)
+   5) Em Configurações do projeto → Geral → seus apps, registre um app da
+      Web e copie os valores abaixo em firebaseConfig
+   6) Troque ADMIN_EMAIL pelo e-mail que deve ser o host/administrador —
+      tem que ser IDÊNTICO ao usado nas regras do Firestore */
+const firebaseConfig = {
+  apiKey: "COLE_AQUI",
+  authDomain: "COLE_AQUI",
+  projectId: "COLE_AQUI",
+  storageBucket: "COLE_AQUI",
+  messagingSenderId: "COLE_AQUI",
+  appId: "COLE_AQUI"
+};
+const ADMIN_EMAIL = "SEU_EMAIL_ADMIN";
+
+const AUTH_ERR = {
+  'auth/email-already-in-use':'Este e-mail já está cadastrado. Tente entrar em vez de criar uma conta nova.',
+  'auth/invalid-email':'E-mail inválido.',
+  'auth/weak-password':'A senha precisa ter pelo menos 6 caracteres.',
+  'auth/user-not-found':'E-mail ou senha incorretos.',
+  'auth/wrong-password':'E-mail ou senha incorretos.',
+  'auth/invalid-credential':'E-mail ou senha incorretos.',
+  'auth/too-many-requests':'Muitas tentativas. Aguarde um pouco e tente de novo.',
+  'auth/network-request-failed':'Falha de conexão. Verifique sua internet.'
+};
+const authErrMsg = e => AUTH_ERR[e.code] || 'Ocorreu um erro. Tente novamente.';
+
+let auth=null, db=null, isAdmin=false, appInitialized=false;
+const authRoot = () => document.getElementById('auth-root');
+
+function authConfigured(){ return firebaseConfig.apiKey !== 'COLE_AQUI' && ADMIN_EMAIL !== 'SEU_EMAIL_ADMIN'; }
+
+function showApp(){
+  authRoot().style.display='none';
+  document.getElementById('app-root').style.display='';
+  if(!appInitialized){ appInitialized=true; initApp(); }
+}
+function showAuthRoot(html){
+  document.getElementById('app-root').style.display='none';
+  authRoot().style.display='';
+  authRoot().innerHTML = html;
+}
+
+function renderSetupNeeded(){
+  showAuthRoot(`<div class="auth-card">
+    <div class="auth-brand">${ic('scale')}<span>Curso·Jurídico</span></div>
+    <h2>Login ainda não configurado</h2>
+    <p class="auth-sub">Este site está pronto para exigir e-mail e senha, mas falta preencher <code>firebaseConfig</code> e <code>ADMIN_EMAIL</code> no início do &lt;script&gt;, com os dados de um projeto Firebase (gratuito).</p>
+  </div>`);
+}
+
+function renderAuthLogin(err=''){
+  showAuthRoot(`<div class="auth-card">
+    <div class="auth-brand">${ic('scale')}<span>Curso·Jurídico</span></div>
+    <h2>Entrar</h2>
+    <p class="auth-sub">Acesse com o e-mail e a senha cadastrados.</p>
+    ${err?`<div class="auth-error">${err}</div>`:''}
+    <form class="auth-form" id="login-form">
+      <input type="email" id="auth-email" placeholder="E-mail" autocomplete="username" required>
+      <input type="password" id="auth-pass" placeholder="Senha" autocomplete="current-password" required>
+      <div class="auth-forgot"><button type="button" id="btn-forgot">Esqueci minha senha</button></div>
+      <button class="btn btn-primary" type="submit">Entrar</button>
+    </form>
+    <p class="auth-switch">Ainda não tem conta? <button id="to-signup">Criar conta</button></p>
+  </div>`);
+  document.getElementById('login-form').addEventListener('submit', e=>{
+    e.preventDefault();
+    const email=document.getElementById('auth-email').value.trim(), pass=document.getElementById('auth-pass').value;
+    auth.signInWithEmailAndPassword(email, pass).catch(er=>renderAuthLogin(authErrMsg(er)));
+  });
+  document.getElementById('to-signup').addEventListener('click', ()=>renderAuthSignup());
+  document.getElementById('btn-forgot').addEventListener('click', ()=>{
+    const email=document.getElementById('auth-email').value.trim();
+    if(!email){ renderAuthLogin('Digite seu e-mail no campo acima e clique em "Esqueci minha senha" de novo.'); return; }
+    auth.sendPasswordResetEmail(email)
+      .then(()=>renderAuthLogin('Enviamos um link de redefinição de senha para ' + email + '.'))
+      .catch(er=>renderAuthLogin(authErrMsg(er)));
+  });
+}
+
+function renderAuthSignup(err=''){
+  showAuthRoot(`<div class="auth-card">
+    <div class="auth-brand">${ic('scale')}<span>Curso·Jurídico</span></div>
+    <h2>Criar conta</h2>
+    <p class="auth-sub">Depois de se cadastrar, seu acesso fica pendente até ser aprovado pelo administrador.</p>
+    ${err?`<div class="auth-error">${err}</div>`:''}
+    <form class="auth-form" id="signup-form">
+      <input type="email" id="auth-email" placeholder="E-mail" autocomplete="username" required>
+      <input type="password" id="auth-pass" placeholder="Senha (mín. 6 caracteres)" autocomplete="new-password" required minlength="6">
+      <input type="password" id="auth-pass2" placeholder="Confirmar senha" autocomplete="new-password" required minlength="6">
+      <button class="btn btn-primary" type="submit">Criar conta</button>
+    </form>
+    <p class="auth-switch">Já tem conta? <button id="to-login">Entrar</button></p>
+  </div>`);
+  document.getElementById('signup-form').addEventListener('submit', e=>{
+    e.preventDefault();
+    const email=document.getElementById('auth-email').value.trim(), pass=document.getElementById('auth-pass').value, pass2=document.getElementById('auth-pass2').value;
+    if(pass!==pass2){ renderAuthSignup('As senhas não coincidem.'); return; }
+    auth.createUserWithEmailAndPassword(email, pass).then(cred=>{
+      return db.collection('users').doc(cred.user.uid).set({
+        email, approved: email===ADMIN_EMAIL, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }).catch(er=>renderAuthSignup(authErrMsg(er)));
+  });
+  document.getElementById('to-login').addEventListener('click', ()=>renderAuthLogin());
+}
+
+function renderAuthPending(email){
+  showAuthRoot(`<div class="auth-card auth-pending">
+    ${ic('alert')}
+    <h2>Aguardando aprovação</h2>
+    <p class="auth-sub">Sua conta (${escAttr(email)}) foi criada, mas ainda precisa ser aprovada pelo administrador do curso. Tente novamente mais tarde.</p>
+    <button class="btn btn-ghost" id="btn-logout-pending">Sair</button>
+  </div>`);
+  document.getElementById('btn-logout-pending').addEventListener('click', ()=>auth.signOut());
+}
+
+function initFirebaseAuth(){
+  if(!authConfigured()){ renderSetupNeeded(); return; }
+  firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  db = firebase.firestore();
+  auth.onAuthStateChanged(async user=>{
+    if(!user){ appInitialized=false; isAdmin=false; renderAuthLogin(); return; }
+    if(user.email===ADMIN_EMAIL){ isAdmin=true; showApp(); return; }
+    try{
+      const doc = await db.collection('users').doc(user.uid).get();
+      if(doc.exists && doc.data().approved){ isAdmin=false; showApp(); }
+      else{ renderAuthPending(user.email); }
+    }catch(e){ renderAuthLogin('Erro ao verificar seu acesso. Tente entrar novamente.'); }
+  });
+}
 
 /* ============ MATÉRIA 1 — DIREITO DO TRABALHO ============ */
 const TRAB_L = [
@@ -1952,6 +2119,7 @@ function renderShell(){
     <div class="header-actions">
       <button class="icon-btn" id="btn-search" title="Buscar" aria-label="Buscar (Ctrl K)">${ic('search')}<span class="kbd only-desktop">Ctrl K</span></button>
       <button class="icon-btn" id="btn-theme" title="Alternar tema" aria-label="Alternar tema claro/escuro">${ic('moon')}</button>
+      <button class="icon-btn" id="btn-logout" title="Sair" aria-label="Sair da conta">${ic('logout')}</button>
     </div>
   </header>
   <div class="layout">
@@ -1971,6 +2139,8 @@ function renderShell(){
         <li class="nav-item tool-item" data-go="favoritos">${ic('star')}<span class="nav-label">Favoritos</span></li>
         <li class="nav-item tool-item" data-go="certificado">${ic('cert')}<span class="nav-label">Certificado</span></li>
       </ul>
+      ${isAdmin?`<div class="sidebar-eyebrow">Administração</div>
+      <ul class="nav-list"><li class="nav-item tool-item" data-go="aprovacoes">${ic('users')}<span class="nav-label">Aprovações</span></li></ul>`:''}
       <div class="sidebar-eyebrow">Trocar de matéria</div>
       <ul class="nav-list" id="nav-subjects"></ul>
     </aside>
@@ -2345,6 +2515,41 @@ function pageCert(){
   });
   postRender();
 }
+async function pageAprovacoes(){
+  main().innerHTML = `<div class="eyebrow">Administração</div><h1>Aprovações de acesso</h1>
+    <p class="hero-sub small">Aprove quem pode entrar no site, ou revogue o acesso de quem já entrou.</p>
+    <div id="admin-content"><p class="auth-loading">Carregando usuários…</p></div>`;
+  postRender();
+  const box = document.getElementById('admin-content');
+  try{
+    const snap = await db.collection('users').get();
+    const users = []; snap.forEach(d=>users.push({id:d.id, ...d.data()}));
+    const pending = users.filter(u=>!u.approved);
+    const approved = users.filter(u=>u.approved && u.email!==ADMIN_EMAIL);
+    box.innerHTML = `
+      <h3 style="margin-top:8px">Pendentes (${pending.length})</h3>
+      <div class="admin-list">${pending.length?pending.map(u=>`
+        <div class="admin-row"><span>${escAttr(u.email)}</span>
+          <button class="btn btn-primary btn-sm" data-approve="${u.id}">Aprovar</button></div>`).join(''):'<p class="admin-empty">Ninguém aguardando aprovação.</p>'}</div>
+      <h3 style="margin-top:30px">Com acesso liberado (${approved.length})</h3>
+      <div class="admin-list">${approved.length?approved.map(u=>`
+        <div class="admin-row"><span>${escAttr(u.email)}</span>
+          <button class="btn btn-ghost btn-sm" data-revoke="${u.id}">Revogar</button></div>`).join(''):'<p class="admin-empty">Nenhum usuário aprovado ainda.</p>'}</div>`;
+    box.querySelectorAll('[data-approve]').forEach(b=>b.addEventListener('click',async()=>{
+      b.disabled=true;
+      await db.collection('users').doc(b.dataset.approve).update({approved:true});
+      pageAprovacoes();
+    }));
+    box.querySelectorAll('[data-revoke]').forEach(b=>b.addEventListener('click',async()=>{
+      if(!confirm('Revogar o acesso deste usuário?')) return;
+      b.disabled=true;
+      await db.collection('users').doc(b.dataset.revoke).update({approved:false});
+      pageAprovacoes();
+    }));
+  }catch(e){
+    box.innerHTML = `<div class="callout callout-warning">Não foi possível carregar a lista de usuários. Confira as regras do Firestore.</div>`;
+  }
+}
 let INDEX=[];
 function buildIndex(){
   const idx=[], sub=S();
@@ -2377,6 +2582,7 @@ function go(route, opts={}){
   else if(route==='mapa') pageMapa();
   else if(route==='favoritos') pageFavoritos();
   else if(route==='certificado') pageCert();
+  else if(route==='aprovacoes' && isAdmin) pageAprovacoes();
   else pageHome();
   markActive();
 }
@@ -2412,6 +2618,7 @@ function closeSidebar(){ document.getElementById('sidebar').classList.remove('op
 function bindShell(){
   document.querySelectorAll('.nav-item[data-go], .brand[data-go]').forEach(el=>el.addEventListener('click',()=>go(el.dataset.go)));
   document.querySelectorAll('.subject-btn').forEach(b=>b.addEventListener('click',()=>switchSubject(b.dataset.subject)));
+  document.getElementById('btn-logout').addEventListener('click',()=>{ if(auth) auth.signOut(); });
   document.getElementById('btn-menu').addEventListener('click',openSidebar);
   document.getElementById('btn-close-menu').addEventListener('click',closeSidebar);
   document.getElementById('sb-backdrop').addEventListener('click',closeSidebar);
@@ -2431,18 +2638,21 @@ function bindShell(){
     if(e.key==='Escape') closeSearch();
   });
 }
-loadPersisted();
-renderShell();
-if(state.theme==='light'){
-  document.documentElement.setAttribute('data-theme','light');
-  document.getElementById('btn-theme').innerHTML = ic('sun');
+function initApp(){
+  loadPersisted();
+  renderShell();
+  if(state.theme==='light'){
+    document.documentElement.setAttribute('data-theme','light');
+    document.getElementById('btn-theme').innerHTML = ic('sun');
+  }
+  try{ go(state.route||'home', {preserveScroll:true}); }catch(e){ go('home'); }
+  if(state.scrollY){
+    requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0, state.scrollY)));
+  }
+  window.addEventListener('pagehide', saveScrollAndPersist);
+  window.addEventListener('beforeunload', saveScrollAndPersist);
 }
-try{ go(state.route||'home', {preserveScroll:true}); }catch(e){ go('home'); }
-if(state.scrollY){
-  requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0, state.scrollY)));
-}
-window.addEventListener('pagehide', saveScrollAndPersist);
-window.addEventListener('beforeunload', saveScrollAndPersist);
+initFirebaseAuth();
 </script>
 </body>
 </html>
