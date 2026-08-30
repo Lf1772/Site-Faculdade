@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Curso·Jurídico — Trabalho, Processo Civil e Obrigações</title>
+<meta name="description" content="Guia de estudos interativo de Direito: Trabalho, Processo Civil, Obrigações e Proteção Penal, com resumos, simulados, flashcards, mapa mental e certificado em PDF.">
+<meta name="theme-color" content="#0f0d0a">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Curso·Jurídico — Guia de estudos de Direito">
+<meta property="og:description" content="Trabalho, Processo Civil, Obrigações e Proteção Penal: resumos, simulados, flashcards, mapa mental e certificado em PDF.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%230f0d0a'/%3E%3Cpath d='M12 5v14M8 19h8M6.5 8h11M6.5 8l-2.5 5a2.4 2.4 0 004.8 0zM17.5 8l2.5 5a2.4 2.4 0 01-4.8 0z' fill='none' stroke='%23c9a574' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
@@ -328,6 +334,7 @@ const I = {
   alert:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>'
 };
 const ic = (n,cls='') => `<span class="icon ${cls}">${I[n]}</span>`;
+const escAttr = (s='') => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 
 /* ============ MATÉRIA 1 — DIREITO DO TRABALHO ============ */
 const TRAB_L = [
@@ -1897,6 +1904,30 @@ const state = {
         penal:{level:null,i:0,answers:[],finished:false,history:[]}},
   flashFilter:'todas', certName:''
 };
+/* ============ PERSISTÊNCIA (localStorage) ============ */
+const STORAGE_KEY = 'curso-juridico-v1';
+function persist(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      subject:state.subject, theme:state.theme, done:state.done, favs:state.favs,
+      quiz:state.quiz, flashFilter:state.flashFilter, certName:state.certName
+    }));
+  }catch(e){ /* localStorage indisponível (modo privado, quota excedida etc.) */ }
+}
+function loadPersisted(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    const saved = JSON.parse(raw);
+    Object.assign(state, saved);
+  }catch(e){ /* dado salvo corrompido — mantém o estado padrão */ }
+}
+function resetProgress(){
+  if(!confirm('Isso vai apagar todo o progresso, favoritos, respostas de simulado e o nome do certificado salvos neste navegador. Continuar?')) return;
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  location.reload();
+}
+
 const S = () => SUBJECTS[state.subject];
 const D = () => state.done[state.subject];
 const F = () => state.favs[state.subject];
@@ -1911,18 +1942,18 @@ const root = document.getElementById('app-root');
 function renderShell(){
   root.innerHTML = `
   <header class="site-header">
-    <button class="icon-btn only-mobile" id="btn-menu">${ic('menu')}</button>
+    <button class="icon-btn only-mobile" id="btn-menu" aria-label="Abrir menu">${ic('menu')}</button>
     <div class="brand" data-go="home"><span class="brand-mark">${I.scale}</span><span>Curso</span><span class="brand-dot">·</span><span id="brand-sub">DT</span></div>
     <div class="subject-switch">${Object.values(SUBJECTS).map(s=>`<button class="subject-btn" data-subject="${s.key}">${s.curto}</button>`).join('')}</div>
     <div class="header-actions">
-      <button class="icon-btn" id="btn-search" title="Buscar">${ic('search')}<span class="kbd only-desktop">Ctrl K</span></button>
-      <button class="icon-btn" id="btn-theme" title="Alternar tema">${ic('moon')}</button>
+      <button class="icon-btn" id="btn-search" title="Buscar" aria-label="Buscar (Ctrl K)">${ic('search')}<span class="kbd only-desktop">Ctrl K</span></button>
+      <button class="icon-btn" id="btn-theme" title="Alternar tema" aria-label="Alternar tema claro/escuro">${ic('moon')}</button>
     </div>
   </header>
   <div class="layout">
     <div class="sidebar-backdrop" id="sb-backdrop"></div>
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar-head"><strong>Menu</strong><button class="icon-btn" id="btn-close-menu">${ic('x')}</button></div>
+      <div class="sidebar-head"><strong>Menu</strong><button class="icon-btn" id="btn-close-menu" aria-label="Fechar menu">${ic('x')}</button></div>
       <div class="sidebar-subject" id="sb-subject"></div>
       <ul class="nav-list"><li class="nav-item tool-item" data-go="home">${ic('home')}<span class="nav-label">Página inicial</span></li></ul>
       <div class="sidebar-eyebrow">Aulas</div>
@@ -1944,10 +1975,11 @@ function renderShell(){
   <footer class="site-footer">
     <p id="footer-line">Material de estudo.</p>
     <p>Conteúdo elaborado a partir das anotações de aula, com organização e revisão didática. Não substitui a leitura da legislação, da doutrina e da jurisprudência.</p>
+    <p>Seu progresso, favoritos e respostas ficam salvos apenas neste navegador. <button class="link-btn" id="btn-reset" style="font-size:13px" aria-label="Limpar todo o progresso salvo neste navegador">Limpar progresso salvo</button></p>
   </footer>
-  <div class="modal-backdrop" id="search-modal">
+  <div class="modal-backdrop" id="search-modal" role="dialog" aria-modal="true" aria-label="Busca">
     <div class="search-modal">
-      <div class="search-input-row">${ic('search')}<input id="search-input" placeholder="Buscar artigo, prazo, conceito..." autocomplete="off"></div>
+      <div class="search-input-row">${ic('search')}<input id="search-input" placeholder="Buscar artigo, prazo, conceito..." aria-label="Buscar artigo, prazo, conceito" autocomplete="off"></div>
       <div class="search-results" id="search-results"></div>
     </div>
   </div>`;
@@ -2171,7 +2203,7 @@ function pageDashboard(){
   const others=Object.values(SUBJECTS).filter(s=>s.key!==state.subject);
   main().innerHTML = `
   <div class="eyebrow">${sub.nome}</div><h1>Seu progresso</h1>
-  <p class="hero-sub small">Os dados valem para esta sessão de estudo.</p>
+  <p class="hero-sub small">Os dados ficam salvos neste navegador entre sessões de estudo.</p>
   <div class="stats-grid">
     <div class="stat-card"><span class="stat-num">${totalPct()}%</span><span class="stat-label">Conteúdo concluído</span></div>
     <div class="stat-card"><span class="stat-num">${doneCount}/${allSections().length}</span><span class="stat-label">Tópicos estudados</span></div>
@@ -2179,10 +2211,11 @@ function pageDashboard(){
     <div class="stat-card"><span class="stat-num">${tent?Math.round(acertos/tent*100):0}%</span><span class="stat-label">Aproveitamento médio</span></div>
     <div class="stat-card"><span class="stat-num">${F().length}</span><span class="stat-label">Tópicos favoritados</span></div>
   </div>
+  ${typeof Chart==='undefined'?'<div class="callout callout-warning">Não foi possível carregar a biblioteca de gráficos (verifique sua conexão). Os números abaixo continuam corretos.</div>':`
   <div class="charts-grid">
     <div class="chart-card"><h4>Progresso por aula</h4><canvas id="ch1" height="200"></canvas></div>
     <div class="chart-card"><h4>Desempenho nos simulados</h4>${h.length?'<canvas id="ch2" height="200"></canvas>':'<p class="empty-chart muted small">Nenhum simulado realizado ainda.<br><button class="link-btn" data-go="quiz" style="margin-top:8px">Fazer um simulado agora</button></p>'}</div>
-  </div>
+  </div>`}
   <div class="chart-card" style="margin-bottom:18px"><h4>Detalhamento por aula</h4>
     <div class="lessons-progress-list">${sub.lessons.map(l=>`<div class="lesson-progress-row">
       <span>${l.id}. ${l.title}</span>
@@ -2278,14 +2311,14 @@ function pageCert(){
     <p class="hero-sub small">${lib?'Todos os tópicos desta matéria foram concluídos.':`Disponível ao concluir 100% dos tópicos. Você está em ${pct}%.`}</p>
     ${!lib?`<div class="mini-progress" style="max-width:420px; margin:14px 0 26px"><div class="mini-progress-bar" style="width:${pct}%"></div></div>`:''}
     <div class="cert-form"><label class="field-label" for="cert-name">Nome completo</label>
-      <input id="cert-name" placeholder="Como deve aparecer no certificado" value="${state.certName}">
+      <input id="cert-name" placeholder="Como deve aparecer no certificado" value="${escAttr(state.certName)}">
       <button class="btn btn-primary" id="cert-dl" ${lib?'':'disabled'}>${ic('cert')} Baixar certificado em PDF</button></div>
     <div class="cert-preview"><div class="cert-card"><span class="cert-seal">${I.seal}</span>
       <div class="cert-eyebrow">${sub.nome}</div><div class="cert-name" id="cert-preview-name">${nome}</div>
       <p class="cert-body">${sub.certTexto}</p>
       <div class="cert-date">${new Date().toLocaleDateString('pt-BR')}</div></div></div></div>`;
   const inp=document.getElementById('cert-name');
-  inp.addEventListener('input',()=>{ state.certName=inp.value; document.getElementById('cert-preview-name').textContent=inp.value||'Seu nome'; });
+  inp.addEventListener('input',()=>{ state.certName=inp.value; document.getElementById('cert-preview-name').textContent=inp.value||'Seu nome'; persist(); });
   document.getElementById('cert-dl').addEventListener('click',()=>{
     if(!window.jspdf) return alert('Não foi possível carregar o gerador de PDF.');
     const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
@@ -2346,7 +2379,7 @@ function postRender(){
   main().querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation(); go(el.dataset.go);}));
   main().querySelectorAll('[data-scroll]').forEach(el=>el.addEventListener('click',()=>{ const t=document.getElementById(el.dataset.scroll); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); }));
   main().querySelectorAll('[data-done]').forEach(el=>el.addEventListener('change',()=>{
-    D()[el.dataset.done]=el.checked; renderSidebarLessons();
+    D()[el.dataset.done]=el.checked; renderSidebarLessons(); persist();
     const l=S().lessons.find(x=>x.sections.some(s=>s.id===el.dataset.done));
     const bar=main().querySelector('.toc-progress .mini-progress-bar'); if(bar) bar.style.width=lessonPct(l)+'%';
     const lbl=main().querySelector('.toc-progress .small'); if(lbl) lbl.textContent=lessonPct(l)+'% concluído';
@@ -2360,12 +2393,14 @@ function postRender(){
     const id=el.dataset.fav, s=allSections().find(x=>x.id===id);
     if(F().some(f=>f.id===id)){ state.favs[state.subject]=F().filter(f=>f.id!==id); el.classList.remove('is-fav'); el.innerHTML=ic('star'); }
     else { F().push({id, aula:s.aula, titulo:s.h}); el.classList.add('is-fav'); el.innerHTML=ic('starFill'); }
+    persist();
   }));
   main().querySelectorAll('[data-caso]').forEach(el=>el.addEventListener('click',()=>{
     document.getElementById('caso-'+el.dataset.caso).classList.toggle('show'); el.classList.toggle('open');
   }));
   const obs=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){e.target.classList.add('in-view'); obs.unobserve(e.target);} }),{threshold:.06});
   main().querySelectorAll('.reveal').forEach(el=>obs.observe(el));
+  persist();
 }
 function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('sb-backdrop').classList.add('show'); }
 function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('sb-backdrop').classList.remove('show'); }
@@ -2376,6 +2411,7 @@ function bindShell(){
   document.getElementById('btn-close-menu').addEventListener('click',closeSidebar);
   document.getElementById('sb-backdrop').addEventListener('click',closeSidebar);
   document.getElementById('btn-search').addEventListener('click',openSearch);
+  document.getElementById('btn-reset').addEventListener('click',resetProgress);
   document.getElementById('search-input').addEventListener('input',e=>renderSearch(e.target.value));
   document.getElementById('search-modal').addEventListener('click',e=>{ if(e.target.id==='search-modal') closeSearch(); });
   document.getElementById('btn-theme').addEventListener('click',()=>{
@@ -2383,13 +2419,20 @@ function bindShell(){
     document.documentElement.setAttribute('data-theme',state.theme);
     document.getElementById('btn-theme').innerHTML = state.theme==='dark'?ic('moon'):ic('sun');
     if(state.route==='dashboard') drawCharts();
+    persist();
   });
   document.addEventListener('keydown',e=>{
     if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openSearch(); }
     if(e.key==='Escape') closeSearch();
   });
 }
-renderShell(); go('home');
+loadPersisted();
+renderShell();
+if(state.theme==='light'){
+  document.documentElement.setAttribute('data-theme','light');
+  document.getElementById('btn-theme').innerHTML = ic('sun');
+}
+go('home');
 </script>
 </body>
 </html>
