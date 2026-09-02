@@ -33,6 +33,12 @@ service cloud.firestore {
       allow update: if request.auth != null && request.auth.token.email == "SEU_EMAIL_ADMIN";
       allow delete: if request.auth != null && request.auth.token.email == "SEU_EMAIL_ADMIN";
     }
+    match /content/{subjectId} {
+      allow read: if request.auth != null &&
+        (request.auth.token.email == "SEU_EMAIL_ADMIN" ||
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.approved == true);
+      allow write: if false;
+    }
   }
 }
 ```
@@ -45,6 +51,10 @@ navegador — ninguém consegue burlar editando o código do site):
   sempre `false` — **exceto** para o e-mail admin, que já entra aprovado.
   Ninguém consegue se auto-aprovar adulterando a chamada.
 - Só o e-mail admin pode aprovar (`update`) ou remover (`delete`) acessos.
+- O material das aulas (coleção `content`) só pode ser lido por quem está
+  logado **e** aprovado (ou é o admin) — e ninguém, nem o admin, escreve
+  nela pelo navegador (`allow write: if false`); o conteúdo é carregado
+  ali por um script de administração, fora do site.
 
 Clique em **Publicar**.
 
@@ -75,11 +85,15 @@ Administração → Aprovações**.
 
 ## Limitação importante
 
-O `index.html` continua sendo um arquivo estático publicado no GitHub
-Pages — o HTML/JS em si é público para quem souber onde procurar (ex.:
-"ver código-fonte" do navegador). O login com aprovação impede o acesso
-casual pela tela do site, mas não é criptografia: alguém tecnicamente
-capaz de inspecionar o código consegue ler o conteúdo das aulas sem
-passar pelo login. Para o uso pretendido (controlar quem entra pela
-interface normal do site), isso é suficiente; não trate o conteúdo como
-confidencial.
+O material das aulas (aulas, questões, flashcards, mapa mental) fica no
+Firestore, não mais embutido no `index.html` — quem não estiver logado e
+aprovado não consegue baixar esse conteúdo de jeito nenhum, nem inspecionando
+o código do site. Isso fecha o principal buraco de um site estático.
+
+O que continua não sendo possível evitar: uma pessoa **logada e aprovada**,
+vendo a aula normalmente na tela, sempre consegue selecionar e copiar o
+texto — isso é inerente a qualquer conteúdo exibido num navegador, não tem
+como bloquear sem prejudicar a leitura. Para o uso pretendido (impedir
+acesso de quem não pagou/não foi aprovado), o que foi implementado é
+suficiente; não existe proteção de conteúdo 100% à prova de cópia num
+site assim, sem soluções de DRM.
