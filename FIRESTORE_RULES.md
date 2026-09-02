@@ -39,6 +39,11 @@ service cloud.firestore {
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.approved == true);
       allow write: if false;
     }
+    match /users/{userId}/sessions/{sessionId} {
+      allow read: if request.auth != null &&
+        (request.auth.uid == userId || request.auth.token.email == "SEU_EMAIL_ADMIN");
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
   }
 }
 ```
@@ -55,6 +60,9 @@ navegador — ninguém consegue burlar editando o código do site):
   logado **e** aprovado (ou é o admin) — e ninguém, nem o admin, escreve
   nela pelo navegador (`allow write: if false`); o conteúdo é carregado
   ali por um script de administração, fora do site.
+- Cada conta gerencia livremente sua própria subcoleção `sessions` (usada
+  para o controle de dispositivos simultâneos); só o e-mail admin consegue
+  ler a de outras contas, para o painel de Aprovações.
 
 Clique em **Publicar**.
 
@@ -82,6 +90,19 @@ Pronto: dê `git push`, e o site passa a pedir login. Crie sua própria conta
 usando esse e-mail admin — ela entra liberada na hora. Qualquer outra
 pessoa que se cadastrar fica pendente até você aprovar em **Menu →
 Administração → Aprovações**.
+
+## Controle de dispositivos simultâneos
+
+Cada conta pode ficar logada em até `MAX_SESSIONS` dispositivos ao mesmo
+tempo (hoje configurado como **2**, perto do início do `<script>` no
+`index.html`). Ao logar num dispositivo a mais, o mais antigo (por tempo
+sem atividade) é desconectado automaticamente, com um aviso na tela.
+
+No painel **Administração → Aprovações**, cada usuário aprovado tem um
+botão **Ver dispositivos**, que mostra os aparelhos que já usaram aquela
+conta e há quanto tempo. Isso ajuda a notar padrões de compartilhamento de
+login mesmo quando estão dentro do limite simultâneo (ex.: a conta troca de
+aparelho o tempo todo).
 
 ## Limitação importante
 

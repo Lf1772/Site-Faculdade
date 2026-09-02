@@ -338,6 +338,11 @@ input,textarea{font-family:inherit;} ul{margin:0; padding:0;} li{list-style:none
 .admin-row{display:flex; align-items:center; justify-content:space-between; gap:14px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px 18px;}
 .admin-row .small{color:var(--text-muted);}
 .admin-empty{color:var(--text-muted); font-size:14px; margin-top:14px;}
+.admin-row-wrap{display:flex; flex-direction:column; gap:8px;}
+.admin-row-actions{display:flex; gap:6px; flex-shrink:0;}
+.admin-devices{background:var(--bg-raised-2); border-radius:var(--radius-sm); padding:10px 14px;}
+.device-row{display:flex; justify-content:space-between; gap:14px; padding:6px 0; font-size:13.5px; border-bottom:1px solid var(--border);}
+.device-row:last-child{border-bottom:none;}
 </style>
 </head>
 <body>
@@ -403,6 +408,64 @@ const authErrMsg = e => AUTH_ERR[e.code] || 'Ocorreu um erro. Tente novamente.';
 
 let auth=null, db=null, isAdmin=false, appInitialized=false;
 const authRoot = () => document.getElementById('auth-root');
+
+/* ============ CONTROLE DE SESSÕES SIMULTÂNEAS ============ */
+const MAX_SESSIONS = 2; /* quantos dispositivos podem ficar logados ao mesmo tempo na mesma conta */
+let mySessionId=null, sessionHeartbeat=null, sessionUnsub=null;
+function summarizeDevice(){
+  const ua = navigator.userAgent;
+  let os = 'Dispositivo desconhecido';
+  if(/Windows/i.test(ua)) os='Windows';
+  else if(/iPhone/i.test(ua)) os='iPhone';
+  else if(/iPad/i.test(ua)) os='iPad';
+  else if(/Android/i.test(ua)) os='Android';
+  else if(/Macintosh/i.test(ua)) os='Mac';
+  else if(/Linux/i.test(ua)) os='Linux';
+  let browser='Navegador';
+  if(/Edg\//i.test(ua)) browser='Edge';
+  else if(/Chrome\//i.test(ua)) browser='Chrome';
+  else if(/Firefox\//i.test(ua)) browser='Firefox';
+  else if(/Safari\//i.test(ua)) browser='Safari';
+  return `${browser} · ${os}`;
+}
+function cleanupSession(){
+  if(sessionHeartbeat){ clearInterval(sessionHeartbeat); sessionHeartbeat=null; }
+  if(sessionUnsub){ sessionUnsub(); sessionUnsub=null; }
+  mySessionId=null;
+}
+async function enforceSessionLimit(uid){
+  const snap = await db.collection('users').doc(uid).collection('sessions').orderBy('lastSeen','desc').get();
+  const docs = snap.docs || [];
+  if(docs.length > MAX_SESSIONS){
+    await Promise.all(docs.slice(MAX_SESSIONS).map(d=>d.ref.delete().catch(()=>{})));
+  }
+}
+async function registerSession(uid){
+  mySessionId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('sess-'+Date.now()+'-'+Math.random().toString(36).slice(2));
+  const ref = db.collection('users').doc(uid).collection('sessions').doc(mySessionId);
+  try{
+    await ref.set({ device:summarizeDevice(), startedAt:firebase.firestore.FieldValue.serverTimestamp(), lastSeen:firebase.firestore.FieldValue.serverTimestamp() });
+    await enforceSessionLimit(uid);
+  }catch(e){ mySessionId=null; return; }
+  sessionHeartbeat = setInterval(()=>{ ref.update({lastSeen:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{}); }, 45000);
+  sessionUnsub = ref.onSnapshot(snap=>{
+    if(!snap.exists && mySessionId){
+      cleanupSession();
+      alert('Sua conta foi acessada em outro dispositivo além do limite permitido (' + MAX_SESSIONS + '), então esta sessão foi encerrada.');
+      if(auth) auth.signOut();
+    }
+  });
+}
+async function deleteOwnSession(uid){
+  if(!mySessionId) return;
+  try{ await db.collection('users').doc(uid).collection('sessions').doc(mySessionId).delete(); }catch(e){}
+}
+async function doLogout(){
+  const uid = auth && auth.currentUser && auth.currentUser.uid;
+  if(uid) await deleteOwnSession(uid);
+  cleanupSession();
+  if(auth) auth.signOut();
+}
 
 function authConfigured(){ return firebaseConfig.apiKey !== 'COLE_AQUI' && ADMIN_EMAIL !== 'SEU_EMAIL_ADMIN'; }
 
@@ -516,7 +579,7 @@ function renderAuthPending(email){
     <p class="auth-sub">Sua conta (${escAttr(email)}) foi criada, mas ainda precisa ser aprovada pelo administrador do curso. Tente novamente mais tarde.</p>
     <button class="btn btn-ghost" id="btn-logout-pending">Sair</button>
   </div>`);
-  document.getElementById('btn-logout-pending').addEventListener('click', ()=>auth.signOut());
+  document.getElementById('btn-logout-pending').addEventListener('click', doLogout);
 }
 
 function initFirebaseAuth(){
@@ -525,11 +588,11 @@ function initFirebaseAuth(){
   auth = firebase.auth();
   db = firebase.firestore();
   auth.onAuthStateChanged(async user=>{
-    if(!user){ appInitialized=false; isAdmin=false; renderAuthLogin(); return; }
-    if(user.email===ADMIN_EMAIL){ isAdmin=true; showApp(); return; }
+    if(!user){ appInitialized=false; isAdmin=false; cleanupSession(); renderAuthLogin(); return; }
+    if(user.email===ADMIN_EMAIL){ isAdmin=true; if(!mySessionId) registerSession(user.uid); showApp(); return; }
     try{
       const doc = await db.collection('users').doc(user.uid).get();
-      if(doc.exists && doc.data().approved){ isAdmin=false; showApp(); }
+      if(doc.exists && doc.data().approved){ isAdmin=false; if(!mySessionId) registerSession(user.uid); showApp(); }
       else{ renderAuthPending(user.email); }
     }catch(e){ renderAuthLogin('Erro ao verificar seu acesso. Tente entrar novamente.'); }
   });
@@ -1028,9 +1091,16 @@ async function pageAprovacoes(){
         <div class="admin-row"><span>${escAttr(u.email)}</span>
           <button class="btn btn-primary btn-sm" data-approve="${u.id}">Aprovar</button></div>`).join(''):'<p class="admin-empty">Ninguém aguardando aprovação.</p>'}</div>
       <h3 style="margin-top:30px">Com acesso liberado (${approved.length})</h3>
+      <p class="small muted" style="margin:-4px 0 12px">Limite de ${MAX_SESSIONS} dispositivos simultâneos por conta — o mais antigo é desconectado automaticamente ao logar num a mais.</p>
       <div class="admin-list">${approved.length?approved.map(u=>`
-        <div class="admin-row"><span>${escAttr(u.email)}</span>
-          <button class="btn btn-ghost btn-sm" data-revoke="${u.id}">Revogar</button></div>`).join(''):'<p class="admin-empty">Nenhum usuário aprovado ainda.</p>'}</div>`;
+        <div class="admin-row-wrap">
+          <div class="admin-row"><span>${escAttr(u.email)}</span>
+            <span class="admin-row-actions">
+              <button class="btn btn-ghost btn-sm" data-devices="${u.id}">Ver dispositivos</button>
+              <button class="btn btn-ghost btn-sm" data-revoke="${u.id}">Revogar</button>
+            </span></div>
+          <div class="admin-devices" id="devices-${u.id}" hidden></div>
+        </div>`).join(''):'<p class="admin-empty">Nenhum usuário aprovado ainda.</p>'}</div>`;
     box.querySelectorAll('[data-approve]').forEach(b=>b.addEventListener('click',async()=>{
       b.disabled=true;
       await db.collection('users').doc(b.dataset.approve).update({approved:true});
@@ -1041,6 +1111,21 @@ async function pageAprovacoes(){
       b.disabled=true;
       await db.collection('users').doc(b.dataset.revoke).update({approved:false});
       pageAprovacoes();
+    }));
+    box.querySelectorAll('[data-devices]').forEach(b=>b.addEventListener('click',async()=>{
+      const uid=b.dataset.devices, panel=document.getElementById('devices-'+uid);
+      if(!panel.hidden){ panel.hidden=true; return; }
+      panel.hidden=false; panel.innerHTML='<p class="auth-loading small">Carregando…</p>';
+      try{
+        const snap = await db.collection('users').doc(uid).collection('sessions').orderBy('lastSeen','desc').get();
+        const sessions=[]; snap.forEach(d=>sessions.push(d.data()));
+        panel.innerHTML = sessions.length ? sessions.map(s=>{
+          const seen = s.lastSeen && s.lastSeen.toDate ? s.lastSeen.toDate() : null;
+          const mins = seen ? Math.round((Date.now()-seen.getTime())/60000) : null;
+          const when = mins===null?'—':mins<2?'ativo agora':mins<60?`há ${mins} min`:mins<1440?`há ${Math.round(mins/60)}h`:`há ${Math.round(mins/1440)}d`;
+          return `<div class="device-row"><span>${escAttr(s.device||'Desconhecido')}</span><span class="small muted">${when}</span></div>`;
+        }).join('') : '<p class="admin-empty small">Nenhuma sessão registrada.</p>';
+      }catch(e){ panel.innerHTML='<p class="admin-empty small">Não foi possível carregar.</p>'; }
     }));
   }catch(e){
     box.innerHTML = `<div class="callout callout-warning">Não foi possível carregar a lista de usuários. Confira as regras do Firestore.</div>`;
@@ -1114,7 +1199,7 @@ function closeSidebar(){ document.getElementById('sidebar').classList.remove('op
 function bindShell(){
   document.querySelectorAll('.nav-item[data-go], .brand[data-go]').forEach(el=>el.addEventListener('click',()=>go(el.dataset.go)));
   document.querySelectorAll('.subject-btn').forEach(b=>b.addEventListener('click',()=>switchSubject(b.dataset.subject)));
-  document.getElementById('btn-logout').addEventListener('click',()=>{ if(auth) auth.signOut(); });
+  document.getElementById('btn-logout').addEventListener('click', doLogout);
   document.getElementById('btn-menu').addEventListener('click',openSidebar);
   document.getElementById('btn-close-menu').addEventListener('click',closeSidebar);
   document.getElementById('sb-backdrop').addEventListener('click',closeSidebar);
