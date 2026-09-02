@@ -143,6 +143,7 @@ input,textarea{font-family:inherit;} ul{margin:0; padding:0;} li{list-style:none
 .main-content{flex:1; min-width:0; padding:40px 32px 80px;}
 .site-footer{max-width:1320px; margin:0 auto; padding:34px 32px 56px; border-top:1px solid var(--border); font-size:13.5px; color:var(--text-muted);}
 .site-footer p{margin:0 0 4px;}
+.site-footer a{color:var(--gold); text-decoration:underline;}
 @media (max-width:880px){
   .layout{display:block;}
   .sidebar{position:fixed; top:0; left:0; bottom:0; height:100vh; z-index:60; width:284px; background:var(--bg); transform:translateX(-100%); transition:transform .25s ease; box-shadow:var(--shadow);}
@@ -321,6 +322,9 @@ input,textarea{font-family:inherit;} ul{margin:0; padding:0;} li{list-style:none
 .auth-form{display:flex; flex-direction:column; gap:12px;}
 .auth-form input{padding:13px 16px; border-radius:var(--radius-sm); border:1.5px solid var(--border-strong); background:var(--bg-raised-2); color:var(--text); font-size:15px; width:100%;}
 .auth-form input:focus{outline:none; border-color:var(--gold);}
+.auth-terms{display:flex; align-items:flex-start; gap:8px; font-size:13px; color:var(--text-muted); line-height:1.4; cursor:pointer;}
+.auth-terms input{width:auto; margin:2px 0 0;}
+.auth-terms a{color:var(--gold);}
 .auth-form .btn{justify-content:center; margin-top:6px;}
 .auth-error{background:var(--warning-soft); color:var(--warning); font-size:13.5px; padding:10px 14px; border-radius:var(--radius-sm); margin-bottom:14px;}
 .auth-switch{margin-top:20px; font-size:14px; color:var(--text-muted); text-align:center;}
@@ -486,6 +490,7 @@ function renderAuthSignup(err=''){
       <input type="email" id="auth-email" placeholder="E-mail" autocomplete="username" required>
       <input type="password" id="auth-pass" placeholder="Senha (mín. 6 caracteres)" autocomplete="new-password" required minlength="6">
       <input type="password" id="auth-pass2" placeholder="Confirmar senha" autocomplete="new-password" required minlength="6">
+      <label class="auth-terms"><input type="checkbox" id="auth-terms" required> Li e aceito os <a href="termos.html" target="_blank" rel="noopener">Termos de Uso</a> e a <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.</label>
       <button class="btn btn-primary" type="submit">Criar conta</button>
     </form>
     <p class="auth-switch">Já tem conta? <button id="to-login">Entrar</button></p>
@@ -493,6 +498,7 @@ function renderAuthSignup(err=''){
   document.getElementById('signup-form').addEventListener('submit', e=>{
     e.preventDefault();
     const email=document.getElementById('auth-email').value.trim(), pass=document.getElementById('auth-pass').value, pass2=document.getElementById('auth-pass2').value;
+    if(!document.getElementById('auth-terms').checked){ renderAuthSignup('É preciso aceitar os Termos de Uso e a Política de Privacidade.'); return; }
     if(pass!==pass2){ renderAuthSignup('As senhas não coincidem.'); return; }
     auth.createUserWithEmailAndPassword(email, pass).then(cred=>{
       return db.collection('users').doc(cred.user.uid).set({
@@ -639,6 +645,7 @@ function renderShell(){
     <p id="footer-line">Material de estudo.</p>
     <p>Conteúdo elaborado a partir das anotações de aula, com organização e revisão didática. Não substitui a leitura da legislação, da doutrina e da jurisprudência.</p>
     <p>Seu progresso, favoritos e respostas ficam salvos apenas neste navegador. <button class="link-btn" id="btn-reset" style="font-size:13px" aria-label="Limpar todo o progresso salvo neste navegador">Limpar progresso salvo</button></p>
+    <p><a href="termos.html" target="_blank" rel="noopener">Termos de Uso</a> · <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a></p>
   </footer>
   <div class="modal-backdrop" id="search-modal" role="dialog" aria-modal="true" aria-label="Busca">
     <div class="search-modal">

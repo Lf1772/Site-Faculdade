@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Política de Privacidade — Curso·Jurídico</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%230f0d0a'/%3E%3Cpath d='M12 5v14M8 19h8M6.5 8h11M6.5 8l-2.5 5a2.4 2.4 0 004.8 0zM17.5 8l2.5 5a2.4 2.4 0 01-4.8 0z' fill='none' stroke='%23c9a574' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap');
+:root{
+  --gold:#c9a574; --gold-soft:rgba(201,165,116,.16);
+  --bg:#0f0d0a; --bg-raised:#171310;
+  --text:#e8dfd5; --text-muted:#a99c8c;
+  --border:rgba(201,165,116,.18); --border-strong:rgba(201,165,116,.34);
+  --warning:#d97706; --warning-soft:rgba(217,119,6,.14);
+  --success:#6ba587; --success-soft:rgba(107,165,135,.14);
+  --font-display:'Playfair Display', Georgia, serif;
+  --font-body:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+*{box-sizing:border-box;}
+body{margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); font-size:16px; line-height:1.65; padding:0 20px 80px;}
+.wrap{max-width:720px; margin:0 auto;}
+header{padding:40px 0 20px; border-bottom:1px solid var(--border); margin-bottom:34px;}
+.brand{display:flex; align-items:center; gap:9px; font-family:var(--font-display); font-size:19px; font-weight:600; color:var(--text); text-decoration:none; margin-bottom:18px;}
+.brand svg{width:22px; height:22px; color:var(--gold);}
+.eyebrow{font-size:13px; text-transform:uppercase; letter-spacing:.12em; color:var(--gold); font-weight:600; margin:0 0 10px;}
+h1{font-family:var(--font-display); font-size:36px; margin:0 0 6px; line-height:1.15;}
+.updated{color:var(--text-muted); font-size:14px;}
+h2{font-family:var(--font-display); font-size:23px; margin:40px 0 12px;}
+h3{font-size:16.5px; margin:20px 0 8px; color:var(--gold);}
+p,li{color:var(--text); margin:0 0 14px;}
+ul,ol{padding-left:22px; margin:0 0 14px;}
+li{margin-bottom:6px;}
+a{color:var(--gold);}
+.notice{border-left:3px solid var(--warning); background:var(--warning-soft); padding:14px 18px; border-radius:0 8px 8px 0; margin:0 0 30px; font-size:14.5px; color:var(--text);}
+.notice strong{color:var(--warning);}
+table{width:100%; border-collapse:collapse; font-size:14.5px; margin:14px 0;}
+th,td{padding:10px 14px; border-bottom:1px solid var(--border); text-align:left; vertical-align:top;}
+th{color:var(--gold); font-weight:600; font-size:13px; text-transform:uppercase;}
+.badge{display:inline-block; font-size:12px; font-weight:600; padding:3px 9px; border-radius:999px; background:var(--success-soft); color:var(--success);}
+footer{margin-top:60px; padding-top:24px; border-top:1px solid var(--border); font-size:13.5px; color:var(--text-muted);}
+footer a{color:var(--text-muted); text-decoration:underline;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <a class="brand" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v18M7 21h10M5 7h14M5 7l-3 6a3 3 0 006 0zM19 7l3 6a3 3 0 01-6 0z"/></svg><span>Curso·Jurídico</span></a>
+  <p class="eyebrow">Documento legal</p>
+  <h1>Política de Privacidade</h1>
+  <p class="updated">Última atualização: 2 de setembro de 2026</p>
+</header>
+
+<div class="notice"><strong>Aviso:</strong> este documento descreve, de forma honesta e específica, quais dados este site realmente coleta e como são usados — não é um texto genérico copiado de outro site. Ainda assim, não substitui a orientação de um advogado; antes de operar como negócio pago, recomenda-se revisão jurídica profissional sobre conformidade com a LGPD.</div>
+
+<h2>1. Quem trata seus dados</h2>
+<p>O responsável pelo tratamento dos dados coletados neste site é <strong>Luiz Felipe Mattos da Silva</strong>, que também atua como encarregado (DPO) para fins de contato sobre privacidade: <a href="mailto:luizflafelipe10@gmail.com">luizflafelipe10@gmail.com</a>.</p>
+
+<h2>2. Quais dados coletamos</h2>
+<table>
+<tr><th>Dado</th><th>Onde fica armazenado</th><th>Quem tem acesso</th></tr>
+<tr><td>E-mail</td><td>Firebase Authentication e Firestore (infraestrutura do Google)</td><td>Você e o administrador do site</td></tr>
+<tr><td>Senha</td><td>Firebase Authentication</td><td><span class="badge">Ninguém</span> — nem nós vemos sua senha; ela é gerenciada de forma criptografada diretamente pelo Google, e não temos acesso a ela</td></tr>
+<tr><td>Status de aprovação de acesso</td><td>Firestore</td><td>Você e o administrador</td></tr>
+<tr><td>Progresso de estudo, favoritos, respostas de simulado, tema, nome do certificado</td><td><strong>Somente no seu navegador</strong> (localStorage) — nunca é enviado a nós</td><td>Só você, no seu próprio dispositivo</td></tr>
+</table>
+<p>Não coletamos CPF, telefone, endereço ou dados de pagamento neste momento. Se o site passar a ter cobrança, dados de pagamento serão processados por um provedor especializado (ex.: Stripe, Mercado Pago), e esta política será atualizada com os detalhes antes disso entrar em vigor.</p>
+
+<h2>3. Para que usamos esses dados</h2>
+<ul>
+  <li>Autenticar seu login e controlar quem tem acesso ao material do curso;</li>
+  <li>Permitir que o administrador aprove ou revogue acessos;</li>
+  <li>Nada além disso — não usamos seus dados para publicidade, não os vendemos e não os compartilhamos com terceiros para fins de marketing.</li>
+</ul>
+
+<h2>4. Compartilhamento com terceiros</h2>
+<p>Os dados de cadastro (e-mail, status de aprovação) ficam hospedados na infraestrutura do <strong>Google Firebase</strong>, que atua como operador de dados nos termos da LGPD, sujeito às políticas de segurança e privacidade do próprio Google. Não compartilhamos seus dados com nenhum outro terceiro.</p>
+
+<h2>5. Armazenamento local (localStorage) e cookies</h2>
+<p>Seu progresso de estudo, favoritos, respostas de simulados, preferência de tema e nome usado no certificado ficam salvos apenas no armazenamento local do seu próprio navegador (<code>localStorage</code>) — essa informação nunca trafega para nós ou para qualquer servidor. Se você limpar os dados do navegador ou usar outro dispositivo, esse progresso não estará mais disponível ali.</p>
+<p>O Firebase Authentication usa armazenamento local do navegador para manter sua sessão de login ativa entre visitas, até que você saia da conta.</p>
+
+<h2>6. Por quanto tempo guardamos seus dados</h2>
+<p>Seus dados de cadastro (e-mail, status de aprovação) são mantidos enquanto sua conta existir. Se você pedir a exclusão da conta, apagamos esses dados em até 15 dias, salvo obrigação legal de retenção.</p>
+
+<h2>7. Seus direitos (LGPD)</h2>
+<p>Você pode, a qualquer momento, solicitar por e-mail:</p>
+<ul>
+  <li>Confirmação de que tratamos seus dados, e acesso a eles;</li>
+  <li>Correção de dados incompletos ou desatualizados;</li>
+  <li>Exclusão da sua conta e dos dados associados a ela;</li>
+  <li>Informação sobre com quem compartilhamos seus dados (resposta: apenas a infraestrutura do Google Firebase, descrita acima);</li>
+  <li>Revogação do seu consentimento, o que implica a perda de acesso ao conteúdo.</li>
+</ul>
+<p>Envie o pedido para <a href="mailto:luizflafelipe10@gmail.com">luizflafelipe10@gmail.com</a>; responderemos em até 15 dias.</p>
+
+<h2>8. Segurança</h2>
+<p>O acesso aos dados de cadastro é protegido por regras de segurança no Firestore que impedem leitura ou escrita por qualquer pessoa não autenticada e aprovada, e a comunicação entre seu navegador e nossos serviços é sempre criptografada (HTTPS).</p>
+
+<h2>9. Menores de idade</h2>
+<p>Este serviço não é direcionado a menores de 18 anos. Caso um menor utilize o site, os pais ou responsáveis devem entrar em contato para solicitar a remoção dos dados.</p>
+
+<h2>10. Alterações nesta política</h2>
+<p>Podemos atualizar esta política periodicamente. Mudanças relevantes serão avisadas por e-mail ou no próprio site, com a data de atualização revisada no topo desta página.</p>
+
+<h2>11. Contato</h2>
+<p>Dúvidas ou solicitações sobre seus dados: <a href="mailto:luizflafelipe10@gmail.com">luizflafelipe10@gmail.com</a>.</p>
+
+<footer>
+  <p>Ver também: <a href="termos.html">Termos de Uso</a> · <a href="index.html">Voltar ao site</a></p>
+</footer>
+</div>
+</body>
+</html>
