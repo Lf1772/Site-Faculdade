@@ -207,7 +207,6 @@ input,textarea{font-family:inherit;} ul{margin:0; padding:0;} li{list-style:none
 .lesson-section{padding:36px 0; border-top:1px solid var(--border);}
 .lesson-section:first-of-type{border-top:none; padding-top:8px;}
 .section-head{display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:14px;}
-.section-head-actions{display:flex; align-items:center; gap:4px; flex-shrink:0;}
 .fav-btn.is-fav .icon{color:var(--gold);}
 .done-toggle{position:relative; display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px; color:var(--text-muted);}
 .done-toggle input{position:absolute; opacity:0; width:1px; height:1px;}
@@ -215,6 +214,7 @@ input,textarea{font-family:inherit;} ul{margin:0; padding:0;} li{list-style:none
 .done-toggle span .icon{width:15px; height:15px;}
 .done-toggle input:checked + span{background:var(--success); border-color:var(--success); color:#0f0d0a;}
 .done-toggle-lg{font-size:14.5px; color:var(--text); gap:10px;}
+.section-foot-actions{display:flex; align-items:center; justify-content:flex-end; gap:16px; margin-top:24px; padding-top:16px; border-top:1px dashed var(--border);}
 .caracteristicas-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(215px,1fr)); gap:14px; margin:20px 0;}
 .carac-card{background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-sm); padding:18px;}
 .carac-num{font-family:var(--font-display); color:var(--gold); font-size:13px; letter-spacing:.05em;}
@@ -801,12 +801,12 @@ function pageLesson(id){
       <h1>${l.title}</h1><p class="hero-sub small">${l.subtitle}</p>
       ${l.sections.map(s=>`
         <section class="lesson-section reveal" id="sec-${s.id}">
-          <div class="section-head"><h2>${s.h}</h2>
-            <div class="section-head-actions">
-              <button class="icon-btn fav-btn ${F().some(f=>f.id===s.id)?'is-fav':''}" data-fav="${s.id}" title="Favoritar">${F().some(f=>f.id===s.id)?ic('starFill'):ic('star')}</button>
-              <label class="done-toggle" title="Marcar como estudado"><input type="checkbox" data-done="${s.id}" ${D()[s.id]?'checked':''}><span>${ic('check')}</span></label>
-            </div></div>
+          <div class="section-head"><h2>${s.h}</h2></div>
           ${s.body}
+          <div class="section-foot-actions">
+            <button class="icon-btn fav-btn ${F().some(f=>f.id===s.id)?'is-fav':''}" data-fav="${s.id}" title="Favoritar">${F().some(f=>f.id===s.id)?ic('starFill'):ic('star')}</button>
+            <label class="done-toggle done-toggle-lg" title="Marcar como estudado"><input type="checkbox" data-done="${s.id}" ${D()[s.id]?'checked':''}><span>${ic('check')}</span> Marcar como concluído</label>
+          </div>
         </section>`).join('')}
       ${l.casos?.length?`
         <section class="lesson-section reveal" id="sec-casos">
