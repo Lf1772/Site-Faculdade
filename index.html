@@ -424,6 +424,11 @@ const authRoot = () => document.getElementById('auth-root');
 const PIX_KEY = '15877661752';
 const PIX_NAME = 'Luiz Felipe Mattos';
 const PIX_CITY = 'Rio de Janeiro';
+const WHATSAPP_NUMBER = '5521990672525'; /* com código do país (55) e DDD, só dígitos */
+function whatsappLink(){
+  const msg = encodeURIComponent('Olá! Segue o comprovante do pagamento do Curso·Jurídico.');
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`;
+}
 const PIX_TIER_LIMIT = 9;   /* quantos pagam o preço promocional */
 const PIX_PRICE_EARLY = 40; /* preço para os PIX_TIER_LIMIT primeiros aprovados */
 const PIX_PRICE_LATER = 50; /* preço para os demais */
@@ -639,7 +644,7 @@ async function renderAuthPending(email){
       <input readonly id="pix-code" value="${escAttr(payload)}">
       <button class="btn btn-ghost btn-sm" id="btn-copy-pix">Copiar código</button>
     </div>
-    <div class="callout pix-note"><strong>Depois de pagar:</strong> envie o comprovante para <a href="mailto:luizflafelipe10@gmail.com">luizflafelipe10@gmail.com</a>. A aprovação é manual, então pode levar um tempinho.</div>
+    <div class="callout pix-note"><strong>Depois de pagar:</strong> envie o comprovante pelo WhatsApp <a href="${whatsappLink()}" target="_blank" rel="noopener">(21) 99067-2525</a>. A aprovação é manual, então pode levar um tempinho.</div>
     <button class="btn btn-ghost" id="btn-logout-pending" style="margin-top:18px">Sair</button>
   </div>`);
   if(window.QRCode){
