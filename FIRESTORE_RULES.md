@@ -44,6 +44,10 @@ service cloud.firestore {
         (request.auth.uid == userId || request.auth.token.email == "SEU_EMAIL_ADMIN");
       allow write: if request.auth != null && request.auth.uid == userId;
     }
+    match /meta/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email == "SEU_EMAIL_ADMIN";
+    }
   }
 }
 ```
@@ -63,6 +67,10 @@ navegador — ninguém consegue burlar editando o código do site):
 - Cada conta gerencia livremente sua própria subcoleção `sessions` (usada
   para o controle de dispositivos simultâneos); só o e-mail admin consegue
   ler a de outras contas, para o painel de Aprovações.
+- Qualquer pessoa logada (mesmo pendente de aprovação) pode ler `meta/pricing`
+  — é o contador usado para mostrar o preço promocional/normal do Pix na tela
+  de pagamento — mas só o e-mail admin pode alterá-lo (isso acontece
+  automaticamente a cada aprovação, no painel de Administração).
 
 Clique em **Publicar**.
 
@@ -103,6 +111,32 @@ botão **Ver dispositivos**, que mostra os aparelhos que já usaram aquela
 conta e há quanto tempo. Isso ajuda a notar padrões de compartilhamento de
 login mesmo quando estão dentro do limite simultâneo (ex.: a conta troca de
 aparelho o tempo todo).
+
+## Pagamento por Pix
+
+Quem se cadastra e ainda não foi aprovado vê uma tela com **QR code Pix**
+(gerado no próprio navegador, sem serviço externo) e o código "copia e
+cola", com o valor já preenchido. Ela paga, manda o comprovante pro e-mail
+do admin, e você aprova manualmente — o mesmo fluxo de sempre.
+
+As configurações ficam perto do início do `<script>` no `index.html`:
+
+```js
+const PIX_KEY = '15877661752';       // sua chave Pix (só dígitos, sem pontuação)
+const PIX_NAME = 'Luiz Felipe Mattos'; // seu nome no Pix (máx. 25 caracteres)
+const PIX_CITY = 'Rio de Janeiro';     // sua cidade (máx. 15 caracteres)
+const PIX_TIER_LIMIT = 9;   // quantas pessoas pagam o preço promocional
+const PIX_PRICE_EARLY = 40; // preço para as primeiras PIX_TIER_LIMIT pessoas aprovadas
+const PIX_PRICE_LATER = 50; // preço para as demais
+```
+
+O preço muda sozinho: cada aprovação no painel de Administração soma 1 no
+contador `meta/pricing.approvedCount` no Firestore, e a tela de pagamento
+sempre calcula o preço da vez com base nesse contador — a partir da 10ª
+aprovação, o valor mostrado passa automaticamente para `PIX_PRICE_LATER`.
+
+Se o preço ou a chave Pix mudarem no futuro, é só editar essas constantes e
+dar `git push` — não precisa mexer no Firestore.
 
 ## Limitação importante
 

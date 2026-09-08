@@ -12,6 +12,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%230f0d0a'/%3E%3Cpath d='M12 5v14M8 19h8M6.5 8h11M6.5 8l-2.5 5a2.4 2.4 0 004.8 0zM17.5 8l2.5 5a2.4 2.4 0 01-4.8 0z' fill='none' stroke='%23c9a574' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -334,6 +335,16 @@ input,textarea{font-family:inherit;} ul{margin:0; padding:0;} li{list-style:none
 .auth-forgot button:hover{color:var(--gold);}
 .auth-pending .icon{width:40px; height:40px; color:var(--gold); margin-bottom:16px;}
 .auth-loading{color:var(--text-muted); font-size:14px; text-align:center;}
+.auth-card-wide{max-width:440px;}
+.pix-price{font-family:var(--font-display); font-size:26px; color:var(--gold); text-align:center; margin:4px 0 20px;}
+.pix-price .small{font-family:var(--font-body); font-size:13px; color:var(--text-muted);}
+.pix-qr{display:flex; align-items:center; justify-content:center; min-height:120px; padding:16px; background:#fff; border-radius:var(--radius-sm); margin-bottom:16px;}
+.pix-qr p{color:#555; text-align:center;}
+.pix-qr img, .pix-qr canvas, .pix-qr table{display:block;}
+.pix-copy-row{display:flex; gap:8px;}
+.pix-copy-row input{flex:1; min-width:0; padding:10px 12px; border-radius:var(--radius-sm); border:1.5px solid var(--border-strong); background:var(--bg-raised-2); color:var(--text-muted); font-size:12px; font-family:monospace;}
+.pix-note{text-align:left; margin-top:18px;}
+.pix-note a{color:var(--gold);}
 .admin-list{display:flex; flex-direction:column; gap:10px; margin-top:18px;}
 .admin-row{display:flex; align-items:center; justify-content:space-between; gap:14px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px 18px;}
 .admin-row .small{color:var(--text-muted);}
@@ -408,6 +419,44 @@ const authErrMsg = e => AUTH_ERR[e.code] || 'Ocorreu um erro. Tente novamente.';
 
 let auth=null, db=null, isAdmin=false, appInitialized=false;
 const authRoot = () => document.getElementById('auth-root');
+
+/* ============ PAGAMENTO POR PIX ============ */
+const PIX_KEY = '15877661752';
+const PIX_NAME = 'Luiz Felipe Mattos';
+const PIX_CITY = 'Rio de Janeiro';
+const PIX_TIER_LIMIT = 9;   /* quantos pagam o preço promocional */
+const PIX_PRICE_EARLY = 40; /* preço para os PIX_TIER_LIMIT primeiros aprovados */
+const PIX_PRICE_LATER = 50; /* preço para os demais */
+function currentPrice(approvedCount){ return approvedCount < PIX_TIER_LIMIT ? PIX_PRICE_EARLY : PIX_PRICE_LATER; }
+
+function crc16Pix(str){
+  let crc = 0xFFFF;
+  for(let i=0; i<str.length; i++){
+    crc ^= (str.charCodeAt(i) << 8);
+    for(let j=0; j<8; j++){
+      crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) : (crc << 1);
+      crc &= 0xFFFF;
+    }
+  }
+  return crc.toString(16).toUpperCase().padStart(4,'0');
+}
+function pixTLV(id, value){ return id + String(value.length).padStart(2,'0') + value; }
+function buildPixPayload(amount){
+  const mai = pixTLV('26', pixTLV('00','BR.GOV.BCB.PIX') + pixTLV('01', PIX_KEY));
+  const payload =
+    pixTLV('00','01') +
+    pixTLV('01','11') +
+    mai +
+    pixTLV('52','0000') +
+    pixTLV('53','986') +
+    pixTLV('54', amount.toFixed(2)) +
+    pixTLV('58','BR') +
+    pixTLV('59', PIX_NAME.substring(0,25)) +
+    pixTLV('60', PIX_CITY.substring(0,15)) +
+    pixTLV('62', pixTLV('05','CURSOJUR')) +
+    '6304';
+  return payload + crc16Pix(payload);
+}
 
 /* ============ CONTROLE DE SESSÕES SIMULTÂNEAS ============ */
 const MAX_SESSIONS = 2; /* quantos dispositivos podem ficar logados ao mesmo tempo na mesma conta */
@@ -572,13 +621,37 @@ function renderAuthSignup(err=''){
   document.getElementById('to-login').addEventListener('click', ()=>renderAuthLogin());
 }
 
-function renderAuthPending(email){
-  showAuthRoot(`<div class="auth-card auth-pending">
-    ${ic('alert')}
-    <h2>Aguardando aprovação</h2>
-    <p class="auth-sub">Sua conta (${escAttr(email)}) foi criada, mas ainda precisa ser aprovada pelo administrador do curso. Tente novamente mais tarde.</p>
-    <button class="btn btn-ghost" id="btn-logout-pending">Sair</button>
+async function renderAuthPending(email){
+  let approvedCount = 0;
+  try{
+    const doc = await db.collection('meta').doc('pricing').get();
+    if(doc.exists && typeof doc.data().approvedCount === 'number') approvedCount = doc.data().approvedCount;
+  }catch(e){ /* sem contagem ainda — usa o preço promocional */ }
+  const price = currentPrice(approvedCount);
+  const payload = buildPixPayload(price);
+  showAuthRoot(`<div class="auth-card auth-card-wide auth-pending">
+    <div class="auth-brand">${ic('scale')}<span>Curso·Jurídico</span></div>
+    <h2>Falta um passo: o pagamento</h2>
+    <p class="auth-sub">Sua conta (${escAttr(email)}) foi criada. Pague via Pix abaixo e envie o comprovante — assim que aprovarmos, seu acesso libera.</p>
+    <div class="pix-price">R$ ${price},00<span class="small muted"> — acesso ao semestre inteiro</span></div>
+    <div class="pix-qr" id="pix-qr"><p class="small muted" style="margin:0">QR indisponível no momento — use o código abaixo.</p></div>
+    <div class="pix-copy-row">
+      <input readonly id="pix-code" value="${escAttr(payload)}">
+      <button class="btn btn-ghost btn-sm" id="btn-copy-pix">Copiar código</button>
+    </div>
+    <div class="callout pix-note"><strong>Depois de pagar:</strong> envie o comprovante para <a href="mailto:luizflafelipe10@gmail.com">luizflafelipe10@gmail.com</a>. A aprovação é manual, então pode levar um tempinho.</div>
+    <button class="btn btn-ghost" id="btn-logout-pending" style="margin-top:18px">Sair</button>
   </div>`);
+  if(window.QRCode){
+    new QRCode(document.getElementById('pix-qr'), {text: payload, width:200, height:200, colorDark:'#000000', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M});
+  }
+  document.getElementById('btn-copy-pix').addEventListener('click', async ()=>{
+    const btn = document.getElementById('btn-copy-pix'), input = document.getElementById('pix-code');
+    try{ await navigator.clipboard.writeText(payload); }
+    catch(e){ input.select(); document.execCommand('copy'); }
+    const original = btn.textContent; btn.textContent = 'Copiado!';
+    setTimeout(()=>{ btn.textContent = original; }, 2000);
+  });
   document.getElementById('btn-logout-pending').addEventListener('click', doLogout);
 }
 
@@ -1081,11 +1154,16 @@ async function pageAprovacoes(){
   postRender();
   const box = document.getElementById('admin-content');
   try{
-    const snap = await db.collection('users').get();
+    const [snap, pricingDoc] = await Promise.all([
+      db.collection('users').get(),
+      db.collection('meta').doc('pricing').get()
+    ]);
+    const approvedCount = (pricingDoc.exists && typeof pricingDoc.data().approvedCount==='number') ? pricingDoc.data().approvedCount : 0;
     const users = []; snap.forEach(d=>users.push({id:d.id, ...d.data()}));
     const pending = users.filter(u=>!u.approved);
     const approved = users.filter(u=>u.approved && u.email!==ADMIN_EMAIL);
     box.innerHTML = `
+      <div class="callout" style="margin-bottom:26px">Preço atual: <strong>R$ ${currentPrice(approvedCount)},00</strong> — ${approvedCount} de ${PIX_TIER_LIMIT} vagas na faixa promocional já aprovadas.</div>
       <h3 style="margin-top:8px">Pendentes (${pending.length})</h3>
       <div class="admin-list">${pending.length?pending.map(u=>`
         <div class="admin-row"><span>${escAttr(u.email)}</span>
@@ -1104,6 +1182,7 @@ async function pageAprovacoes(){
     box.querySelectorAll('[data-approve]').forEach(b=>b.addEventListener('click',async()=>{
       b.disabled=true;
       await db.collection('users').doc(b.dataset.approve).update({approved:true});
+      await db.collection('meta').doc('pricing').set({approvedCount: firebase.firestore.FieldValue.increment(1)}, {merge:true});
       pageAprovacoes();
     }));
     box.querySelectorAll('[data-revoke]').forEach(b=>b.addEventListener('click',async()=>{
