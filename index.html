@@ -425,6 +425,12 @@ const PIX_KEY = '15877661752';
 const PIX_NAME = 'Luiz Felipe Mattos';
 const PIX_CITY = 'Rio de Janeiro';
 const WHATSAPP_NUMBER = '5521990672525'; /* com código do país (55) e DDD, só dígitos */
+
+/* ============ FIM DO SEMESTRE ============ */
+/* Acesso de quem não é admin vale até o fim de 13/12/2026 (horário de Brasília).
+   Depois disso, a regra do Firestore já nega a leitura do conteúdo sozinha —
+   não precisa revogar ninguém manualmente. */
+const SEMESTER_END = new Date('2026-12-14T03:00:00Z');
 function whatsappLink(){
   const msg = encodeURIComponent('Olá! Segue o comprovante do pagamento do Curso·Jurídico.');
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`;
@@ -626,6 +632,17 @@ function renderAuthSignup(err=''){
   document.getElementById('to-login').addEventListener('click', ()=>renderAuthLogin());
 }
 
+function renderSemesterEnded(){
+  showAuthRoot(`<div class="auth-card auth-pending">
+    ${ic('alert')}
+    <h2>Acesso encerrado</h2>
+    <p class="auth-sub">O semestre terminou em 13/12/2026 e o acesso ao curso foi encerrado junto com ele. Qualquer dúvida, chama no WhatsApp.</p>
+    <a class="btn btn-primary" href="${whatsappLink()}" target="_blank" rel="noopener" style="justify-content:center; margin-bottom:10px">Falar no WhatsApp</a>
+    <button class="btn btn-ghost" id="btn-logout-ended">Sair</button>
+  </div>`);
+  document.getElementById('btn-logout-ended').addEventListener('click', doLogout);
+}
+
 async function renderAuthPending(email){
   let approvedCount = 0;
   try{
@@ -670,7 +687,10 @@ function initFirebaseAuth(){
     if(user.email===ADMIN_EMAIL){ isAdmin=true; if(!mySessionId) registerSession(user.uid); showApp(); return; }
     try{
       const doc = await db.collection('users').doc(user.uid).get();
-      if(doc.exists && doc.data().approved){ isAdmin=false; if(!mySessionId) registerSession(user.uid); showApp(); }
+      if(doc.exists && doc.data().approved){
+        if(Date.now() >= SEMESTER_END.getTime()){ renderSemesterEnded(); return; }
+        isAdmin=false; if(!mySessionId) registerSession(user.uid); showApp();
+      }
       else{ renderAuthPending(user.email); }
     }catch(e){ renderAuthLogin('Erro ao verificar seu acesso. Tente entrar novamente.'); }
   });
@@ -786,6 +806,7 @@ function renderShell(){
     <p id="footer-line">Material de estudo.</p>
     <p>Conteúdo elaborado a partir das anotações de aula, com organização e revisão didática. Não substitui a leitura da legislação, da doutrina e da jurisprudência.</p>
     <p>Seu progresso, favoritos e respostas ficam salvos apenas neste navegador. <button class="link-btn" id="btn-reset" style="font-size:13px" aria-label="Limpar todo o progresso salvo neste navegador">Limpar progresso salvo</button></p>
+    ${isAdmin?'':'<p>Seu acesso a este curso vale até 13/12/2026, fim do semestre.</p>'}
     <p><a href="termos.html" target="_blank" rel="noopener">Termos de Uso</a> · <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a></p>
   </footer>
   <div class="modal-backdrop" id="search-modal" role="dialog" aria-modal="true" aria-label="Busca">

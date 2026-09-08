@@ -36,7 +36,8 @@ service cloud.firestore {
     match /content/{subjectId} {
       allow read: if request.auth != null &&
         (request.auth.token.email == "SEU_EMAIL_ADMIN" ||
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.approved == true);
+         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.approved == true &&
+          request.time < timestamp.date(2026,12,14) + duration.value(3,'h')));
       allow write: if false;
     }
     match /users/{userId}/sessions/{sessionId} {
@@ -61,9 +62,13 @@ navegador — ninguém consegue burlar editando o código do site):
   Ninguém consegue se auto-aprovar adulterando a chamada.
 - Só o e-mail admin pode aprovar (`update`) ou remover (`delete`) acessos.
 - O material das aulas (coleção `content`) só pode ser lido por quem está
-  logado **e** aprovado (ou é o admin) — e ninguém, nem o admin, escreve
-  nela pelo navegador (`allow write: if false`); o conteúdo é carregado
-  ali por um script de administração, fora do site.
+  logado **e** aprovado (ou é o admin) **e** dentro do prazo (até
+  13/12/2026, fim do semestre — depois disso, ninguém além do e-mail
+  admin consegue ler, mesmo com a conta ainda marcada como aprovada; o
+  bloqueio é automático, sem precisar revogar ninguém manualmente) — e
+  ninguém, nem o admin, escreve nela pelo navegador (`allow write: if
+  false`); o conteúdo é carregado ali por um script de administração,
+  fora do site.
 - Cada conta gerencia livremente sua própria subcoleção `sessions` (usada
   para o controle de dispositivos simultâneos); só o e-mail admin consegue
   ler a de outras contas, para o painel de Aprovações.
@@ -137,6 +142,26 @@ aprovação, o valor mostrado passa automaticamente para `PIX_PRICE_LATER`.
 
 Se o preço ou a chave Pix mudarem no futuro, é só editar essas constantes e
 dar `git push` — não precisa mexer no Firestore.
+
+## Fim do semestre (13/12/2026)
+
+O acesso de qualquer conta que não seja a sua (o e-mail admin) vale até o
+fim do dia 13/12/2026, horário de Brasília. Isso é aplicado em dois
+lugares:
+
+- **No Firestore** (a proteção que vale de verdade): a regra de
+  `content/{subjectId}` só libera a leitura pra quem está aprovado **e**
+  dentro do prazo. No dia seguinte, o bloqueio acontece sozinho — você
+  não precisa revogar ninguém manualmente.
+- **No site**: quem tentar entrar depois do prazo vê uma tela avisando que
+  o acesso encerrou, em vez de um erro genérico.
+
+As contas continuam marcadas como `approved: true` no Firestore mesmo
+depois do prazo (não são revogadas de fato) — isso é só cosmético, o
+acesso ao conteúdo já está bloqueado pela regra. Se quiser reabrir pra um
+próximo semestre, edite a data em dois lugares: a constante
+`SEMESTER_END` no `index.html`, e a data (`timestamp.date(2026,12,14)`)
+na regra do `content` no Firestore.
 
 ## Limitação importante
 
