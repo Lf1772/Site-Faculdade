@@ -379,6 +379,20 @@ input,textarea{font-family:inherit;} ul{margin:0; padding:0;} li{list-style:none
 .landing-feat p{font-size:13px; color:var(--text-muted); margin:0; line-height:1.5;}
 .landing-final{max-width:640px; margin:56px auto 0; padding:0 24px; text-align:center;}
 .landing-final .btn{width:100%; justify-content:center;}
+
+.preview-wrap{min-height:100vh; background:var(--bg);}
+.preview-nav{display:flex; align-items:center; justify-content:space-between; max-width:760px; margin:0 auto; padding:26px 24px 0;}
+.preview-nav .auth-brand{margin-bottom:0;}
+.preview-tabs{display:flex; gap:8px; flex-wrap:wrap; max-width:760px; margin:22px auto 0; padding:0 24px;}
+.preview-tab{padding:9px 16px; border-radius:999px; border:1.5px solid var(--border-strong); background:var(--bg-raised); color:var(--text-muted); font-size:13.5px; font-weight:600;}
+.preview-tab.is-active{background:var(--gold-soft); color:var(--gold); border-color:var(--gold);}
+.preview-body{max-width:760px; margin:0 auto; padding:28px 24px 0;}
+.preview-badge{display:inline-block; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--gold); background:var(--gold-soft); padding:5px 12px; border-radius:999px; margin-bottom:14px;}
+.preview-flash-note{font-size:13px; color:var(--text-muted); margin:6px 0 0;}
+.preview-quiz-item{background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:16px;}
+.preview-cta{max-width:760px; margin:20px auto 60px; padding:24px; text-align:center; background:var(--bg-raised); border:1px solid var(--border-strong); border-radius:var(--radius);}
+.preview-cta p{color:var(--text-muted); margin-bottom:16px;}
+.preview-cta .btn{width:100%; max-width:320px; justify-content:center; margin:0 auto;}
 </style>
 </head>
 <body>
@@ -643,6 +657,7 @@ function renderLanding(){
       <p>Resumos, simulados, flashcards, mapa mental e certificado — tudo num só lugar, organizado por matéria, pra você não perder mais tempo garimpando PDF solto e resumo de grupo do WhatsApp.</p>
       <div class="landing-cta-row">
         <button class="btn btn-primary" id="landing-to-signup">Criar minha conta</button>
+        <button class="btn btn-ghost" id="landing-to-preview">Ver prévia grátis</button>
         <button class="btn btn-ghost" id="landing-to-login-2">Já tenho conta</button>
       </div>
       <p class="landing-price">A partir de <strong>R$ ${price},00</strong> · acesso ao semestre inteiro, pagamento único</p>
@@ -671,6 +686,78 @@ function renderLanding(){
   document.getElementById('landing-to-signup-2').addEventListener('click', ()=>renderAuthSignup());
   document.getElementById('landing-to-login').addEventListener('click', ()=>renderAuthLogin());
   document.getElementById('landing-to-login-2').addEventListener('click', ()=>renderAuthLogin());
+  document.getElementById('landing-to-preview').addEventListener('click', ()=>renderPreview(renderLanding));
+}
+
+let previewSubject = 'trabalho';
+function renderPreview(backFn){
+  const p = PREVIEW[previewSubject];
+  document.getElementById('app-root').style.display='none';
+  authRoot().style.display='';
+  authRoot().className = 'preview-wrap';
+  authRoot().innerHTML = `
+    <div class="preview-nav">
+      <div class="auth-brand">${ic('scale')}<span>Curso·Jurídico</span></div>
+      <button class="btn btn-ghost btn-sm" id="preview-back">&larr; Voltar</button>
+    </div>
+    <div class="preview-tabs">
+      ${Object.keys(PREVIEW).map(k=>`<button class="preview-tab ${k===previewSubject?'is-active':''}" data-preview-tab="${k}">${PREVIEW[k].curto}</button>`).join('')}
+    </div>
+    <div class="preview-body">
+      <span class="preview-badge">Prévia grátis · Aula 1</span>
+      <div class="eyebrow">${p.nome}</div>
+      <h1>${p.lesson.title}</h1>
+      <p class="hero-sub small">${p.lesson.subtitle}</p>
+      ${p.lesson.sections.map(s=>`
+        <section class="lesson-section reveal">
+          <div class="section-head"><h2>${s.h}</h2></div>
+          ${s.body}
+        </section>`).join('')}
+      ${p.flash.length?`
+        <section class="lesson-section reveal">
+          <div class="section-head"><h2>Flashcards de exemplo</h2></div>
+          <div class="flash-grid">${p.flash.map(c=>`<div class="flashcard"><div class="flashcard-inner">
+            <div class="flash-face"><span class="flash-tag">Aula ${c.aula}</span><div>${c.f}</div></div>
+            <div class="flash-face flash-back"><div>${c.b}</div></div></div></div>`).join('')}</div>
+          <p class="preview-flash-note">Clique num card pra virar e ver a resposta.</p>
+        </section>`:''}
+      ${p.questions.length?`
+        <section class="lesson-section reveal">
+          <div class="section-head"><h2>Questões de exemplo</h2></div>
+          ${p.questions.map((q,i)=>`
+            <div class="preview-quiz-item">
+              <h3 class="quiz-question" style="font-size:17px">${q.q}</h3>
+              <div class="quiz-options" data-preview-quiz="${i}">
+                ${q.opts.map((o,j)=>`<button class="quiz-opt" data-opt="${j}">${o}</button>`).join('')}
+              </div>
+              <div class="quiz-explain" id="preview-explain-${i}" hidden><strong>Explicação:</strong> ${q.exp}</div>
+            </div>`).join('')}
+        </section>`:''}
+    </div>
+    <div class="preview-cta">
+      <p>Isso foi só a Aula 1. As demais aulas, simulados completos, mapa mental e certificado ficam liberados depois da aprovação do acesso.</p>
+      <button class="btn btn-primary" id="preview-to-signup">Quero acesso completo</button>
+    </div>`;
+  document.getElementById('preview-back').addEventListener('click', backFn);
+  document.getElementById('preview-to-signup').addEventListener('click', ()=>renderAuthSignup());
+  document.querySelectorAll('[data-preview-tab]').forEach(b=>b.addEventListener('click', ()=>{
+    previewSubject = b.dataset.previewTab;
+    renderPreview(backFn);
+  }));
+  document.querySelectorAll('.flashcard').forEach(el=>el.addEventListener('click', ()=>el.classList.toggle('flipped')));
+  document.querySelectorAll('[data-preview-quiz]').forEach(group=>{
+    const qi = group.dataset.previewQuiz;
+    const item = PREVIEW[previewSubject].questions[qi];
+    group.querySelectorAll('[data-opt]').forEach(btn=>btn.addEventListener('click', ()=>{
+      const chosen = Number(btn.dataset.opt);
+      group.querySelectorAll('[data-opt]').forEach((b,j)=>{
+        b.disabled = true;
+        if(j===item.correct) b.classList.add('is-correct');
+        else if(j===chosen) b.classList.add('is-wrong');
+      });
+      document.getElementById('preview-explain-'+qi).hidden = false;
+    }));
+  });
 }
 
 function renderAuthLogin(err=''){
@@ -765,6 +852,7 @@ async function renderAuthPending(email){
       <button class="btn btn-ghost btn-sm" id="btn-copy-pix">Copiar código</button>
     </div>
     <div class="callout pix-note"><strong>Depois de pagar:</strong> envie o comprovante pelo WhatsApp <a href="${whatsappLink()}" target="_blank" rel="noopener">(21) 99067-2525</a>. A aprovação é manual, então pode levar um tempinho.</div>
+    <p class="auth-switch">Enquanto isso, <button id="btn-preview-pending">veja uma prévia grátis</button> do conteúdo.</p>
     <button class="btn btn-ghost" id="btn-logout-pending" style="margin-top:18px">Sair</button>
   </div>`);
   if(window.QRCode){
@@ -778,6 +866,7 @@ async function renderAuthPending(email){
     setTimeout(()=>{ btn.textContent = original; }, 2000);
   });
   document.getElementById('btn-logout-pending').addEventListener('click', doLogout);
+  document.getElementById('btn-preview-pending').addEventListener('click', ()=>renderPreview(()=>renderAuthPending(email)));
 }
 
 function initFirebaseAuth(){
@@ -817,6 +906,448 @@ const SUBJECTS = {
    tagline:'Dos elementos da obrigação à solidariedade, com base no Código Civil.',
    fluxo:'Aula 1: conceito e elementos → Aula 2: fontes e classificações → Aula 3: dar, fazer e não fazer → Aula 4: compostas e solidariedade.',
    certTexto:'concluiu o estudo da Teoria Geral das Obrigações: elementos e estrutura da relação obrigacional, fontes, obrigações propter rem, modalidades de dar, fazer e não fazer, e o regime das obrigações compostas e solidárias.'}
+};
+
+/* ============ PRÉVIA GRÁTIS (amostra da Aula 1 de cada matéria, pra quem ainda não pagou) ============ */
+const PREVIEW = {
+ "trabalho": {
+  "nome": "Direito do Trabalho",
+  "curto": "Trabalho",
+  "tagline": "Do conceito de trabalhador às categorias especiais de trabalho.",
+  "lesson": {
+   "id": 1,
+   "title": "Introdução ao Direito do Trabalho",
+   "subtitle": "O que é o Direito do Trabalho, qual seu objeto e como ele se organiza.",
+   "sections": [
+    {
+     "id": "t1-1",
+     "h": "Quem é o trabalhador?",
+     "body": "<p>A palavra <strong>trabalhador</strong> é ampla. Nem todos estão submetidos às mesmas regras.</p>\n   <div class=\"table-wrap\"><table class=\"styled-table\"><tr><th>Categoria</th><th>Ideia central</th><th>Regime</th></tr>\n   <tr><td>Com vínculo empregatício</td><td>Reúne os requisitos da relação de emprego</td><td>CLT e Constituição</td></tr>\n   <tr><td>Estatutário</td><td>Cargo público regido por estatuto</td><td>Direito Administrativo e Constitucional</td></tr>\n   <tr><td>Sem vínculo</td><td>Presta serviço sem preencher os requisitos</td><td>Direito Civil ou lei especial</td></tr></table></div>\n   <div class=\"callout\"><strong>Guarde isto:</strong> todo empregado é trabalhador, mas nem todo trabalhador é empregado.</div>"
+    },
+    {
+     "id": "t1-2",
+     "h": "As três divisões do Direito do Trabalho",
+     "body": "<div class=\"caracteristicas-grid\">\n   <div class=\"carac-card\"><div class=\"carac-num\">SEGMENTO I</div><h4>Direito Individual</h4><p class=\"small muted\">Relação entre empregado e empregador: contrato, jornada, salário, férias, término.</p></div>\n   <div class=\"carac-card\"><div class=\"carac-num\">SEGMENTO II</div><h4>Direito Coletivo</h4><p class=\"small muted\">Categorias profissionais e econômicas: sindicatos, negociação, ACT, CCT.</p></div>\n   <div class=\"carac-card\"><div class=\"carac-num\">SEGMENTO III</div><h4>Direito Processual</h4><p class=\"small muted\">Como o conflito tramita na Justiça do Trabalho.</p></div></div>"
+    },
+    {
+     "id": "t1-3",
+     "h": "Fases pré-contratual, contratual e pós-contratual",
+     "body": "<p>A proteção não começa no primeiro dia nem termina no último.</p>\n   <ul class=\"styled-list\"><li><strong>Pré-contratual:</strong> seleção, discriminação, promessas de emprego.</li>\n   <li><strong>Contratual:</strong> prestação efetiva, direitos e deveres em vigor.</li>\n   <li><strong>Pós-contratual:</strong> verbas rescisórias, documentos, responsabilidades remanescentes.</li></ul>"
+    },
+    {
+     "id": "t1-4",
+     "h": "Natureza jurídica: privado com intervenção pública",
+     "body": "<p>Ramo predominantemente de <strong>Direito Privado</strong>. Mas as partes não têm o mesmo poder de negociação: o empregado depende do salário — é a <strong>hipossuficiência</strong>.</p>\n   <div class=\"callout\"><strong>Publicização do Direito Privado:</strong> relação privada intensamente regulada por normas de interesse público, para impedir que a liberdade contratual afaste direitos mínimos.</div>"
+    },
+    {
+     "id": "t1-5",
+     "h": "A CLT e a recepção pela CF/88",
+     "body": "<span class=\"badge badge-lei\">Decreto-Lei nº 5.452/1943</span>\n   <p>A CLT foi promulgada pelo <strong>Decreto-Lei nº 5.452, de 1º de maio de 1943</strong>.</p>\n   <p>Pela <strong>teoria da recepção</strong>, normas anteriores compatíveis continuam válidas. A CLT foi recepcionada com força de <strong>lei ordinária federal</strong>.</p>"
+    },
+    {
+     "id": "t1-6",
+     "h": "O empregador e a proteção contra fraudes",
+     "body": "<span class=\"badge badge-comp\">Complemento</span>\n   <p class=\"comp-note\">Conteúdo acrescentado para completar o tema — não constava no material de aula.</p>\n   <div class=\"artigo\"><strong>CLT, Art. 2º</strong> — Considera-se empregador a empresa, individual ou coletiva, que, assumindo os riscos da atividade econômica, admite, assalaria e dirige a prestação pessoal de serviço.<br><br><strong>CLT, Art. 3º</strong> — Considera-se empregado toda pessoa física que prestar serviços de natureza não eventual a empregador, sob a dependência deste e mediante salário.</div>\n   <p>Note que o art. 2º já traz dois dos requisitos vistos na Aula 3: <strong>alteridade</strong> (\"assumindo os riscos\") e <strong>subordinação</strong> (\"dirige a prestação\").</p>\n   <h4 style=\"margin-top:22px\">Grupo econômico (art. 2º, §§ 2º e 3º)</h4>\n   <p>Havendo direção, controle ou administração de outra, ou ainda que apenas coordenadas, as empresas do grupo respondem <strong>solidariamente</strong> pelas obrigações trabalhistas. Após a reforma de 2017, exige-se demonstração do <strong>interesse integrado</strong>, efetiva comunhão de interesses e atuação conjunta — a mera identidade de sócios não basta.</p>\n   <h4 style=\"margin-top:22px\">Sucessão trabalhista (arts. 10 e 448)</h4>\n   <p>A mudança na propriedade ou na estrutura jurídica da empresa <strong>não afeta</strong> os contratos de trabalho nem os direitos adquiridos dos empregados. O contrato segue com o novo titular.</p>\n   <h4 style=\"margin-top:22px\">Poderes do empregador</h4>\n   <div class=\"caracteristicas-grid\">\n     <div class=\"carac-card\"><div class=\"carac-num\">I</div><h4>Diretivo</h4><p class=\"small muted\">Organizar a atividade e definir como o trabalho será prestado.</p></div>\n     <div class=\"carac-card\"><div class=\"carac-num\">II</div><h4>Fiscalizatório</h4><p class=\"small muted\">Controlar a execução — sempre com respeito à intimidade e à dignidade.</p></div>\n     <div class=\"carac-card\"><div class=\"carac-num\">III</div><h4>Disciplinar</h4><p class=\"small muted\">Advertência, suspensão (máximo 30 dias) e dispensa por justa causa (art. 482).</p></div>\n   </div>\n   <div class=\"artigo\"><strong>CLT, Art. 9º</strong> — Serão nulos de pleno direito os atos praticados com o objetivo de desvirtuar, impedir ou fraudar a aplicação dos preceitos contidos na Consolidação.</div>\n   <div class=\"callout\"><strong>Por que este artigo importa:</strong> é o suporte legal da primazia da realidade. O art. 9º permite declarar nulo o contrato de fachada — o \"PJ\" que esconde emprego, a cooperativa fraudulenta — sem depender apenas de construção doutrinária.</div>"
+    }
+   ],
+   "casos": [
+    {
+     "t": "Contrato de 'prestação de serviços' que esconde emprego",
+     "resumo": "Empresa contrata como PJ, mas a pessoa cumpre horário, recebe ordens e não pode ser substituída.",
+     "detalhe": "A nomenclatura do contrato não decide a questão — os fatos concretos serão analisados. Esse raciocínio é formalizado na Aula 2, com a primazia da realidade."
+    },
+    {
+     "t": "Promessa de contratação desfeita",
+     "resumo": "Candidato pede demissão após promessa formal, mas a empresa desiste.",
+     "detalhe": "Problema típico da fase pré-contratual: a proteção trabalhista não começa apenas na assinatura do contrato."
+    }
+   ]
+  },
+  "flash": [
+   {
+    "aula": 1,
+    "f": "O que é a teoria da recepção?",
+    "b": "Normas anteriores continuam válidas se compatíveis com a nova Constituição. A CLT foi recepcionada com força de lei ordinária federal."
+   },
+   {
+    "aula": 1,
+    "f": "O que é 'publicização do Direito Privado'?",
+    "b": "A relação privada de emprego passa a ser regulada por normas de interesse público, pela hipossuficiência do trabalhador."
+   },
+   {
+    "aula": 1,
+    "f": "As três divisões do Direito do Trabalho",
+    "b": "Direito Individual, Direito Coletivo e Direito Processual do Trabalho."
+   },
+   {
+    "aula": 1,
+    "f": "As três fases da proteção trabalhista",
+    "b": "Pré-contratual, contratual e pós-contratual."
+   }
+  ],
+  "questions": [
+   {
+    "q": "Sobre 'trabalhador' e 'empregado':",
+    "opts": [
+     "São sinônimos",
+     "Todo empregado é trabalhador, mas nem todo trabalhador é empregado",
+     "Todo trabalhador é empregado",
+     "Nenhum é empregado"
+    ],
+    "correct": 1,
+    "exp": "Trabalhador é gênero; empregado é a espécie que reúne os requisitos legais.",
+    "aula": 1
+   },
+   {
+    "q": "O Direito do Trabalho divide-se em quantos segmentos?",
+    "opts": [
+     "Dois",
+     "Três: individual, coletivo e processual",
+     "Quatro",
+     "Cinco"
+    ],
+    "correct": 1,
+    "exp": "Direito Individual, Coletivo e Processual.",
+    "aula": 1
+   }
+  ]
+ },
+ "processo": {
+  "nome": "Processo Civil",
+  "curto": "Processo Civil",
+  "tagline": "Da petição inicial ao último recurso, no procedimento comum do CPC.",
+  "lesson": {
+   "id": 1,
+   "title": "Jurisdição, ação, processo e procedimento",
+   "subtitle": "Aula 1 — 06/08. Os institutos fundamentais e a formação da relação processual.",
+   "sections": [
+    {
+     "id": "p1-1",
+     "h": "Panorama histórico dos institutos",
+     "body": "<div class=\"caracteristicas-grid\">\n   <div class=\"carac-card\"><div class=\"carac-num\">I</div><h4>Autotutela</h4><p class=\"small muted\">Solução pela força. Hoje excepcional — sobrevive no <strong>desforço imediato</strong> na posse.</p></div>\n   <div class=\"carac-card\"><div class=\"carac-num\">II</div><h4>Arbitragem</h4><p class=\"small muted\">Forma alternativa e <strong>facultativa</strong>, regida pela <strong>Lei nº 9.307/96</strong>.</p></div>\n   <div class=\"carac-card\"><div class=\"carac-num\">III</div><h4>Roma</h4><p class=\"small muted\"><em>Juris dictio</em> — \"dizer o direito\". A figura do <strong>pretor</strong>.</p></div></div>\n   <ul class=\"styled-list\"><li><strong>Jurisdição privada</strong> — arbitragem</li><li><strong>Jurisdição pública</strong> — juízes e tribunais</li><li><strong>Jurisdição inerte</strong> — depende de provocação: <strong>CF, art. 5º, XXXV</strong></li></ul>"
+    },
+    {
+     "id": "p1-2",
+     "h": "Processo x Procedimento",
+     "body": "<p>O <strong>processo</strong> é o instrumento de realização da jurisdição. O <strong>procedimento</strong> é o rito, o caminho.</p>\n   <div class=\"table-wrap\"><table class=\"styled-table\"><tr><th>Conceito</th><th>Espécies</th></tr>\n   <tr><td>Processo Civil</td><td>De Execução · De Conhecimento</td></tr>\n   <tr><td>Procedimento do Processo de Conhecimento</td><td>Comum · Especiais · Executório</td></tr></table></div>\n   <div class=\"callout\">Separe: <strong>processo de conhecimento</strong> é a categoria ampla; <strong>procedimento comum</strong> é o rito geral; <strong>especial</strong> é o rito diferenciado (ex.: Juizados, Lei nº 9.099/95).</div>"
+    },
+    {
+     "id": "p1-3",
+     "h": "Direito de Ação x Ação",
+     "body": "<div class=\"caracteristicas-grid\">\n   <div class=\"carac-card\"><div class=\"carac-num\">DIREITO DE AÇÃO</div><h4>Abstrato e incondicional</h4><p class=\"small muted\">Direito constitucional de provocar a jurisdição. Existe independentemente de o autor ter razão.</p></div>\n   <div class=\"carac-card\"><div class=\"carac-num\">AÇÃO</div><h4>Concreta e condicionada</h4><p class=\"small muted\"><strong>Materializada na petição inicial</strong>. Condicionada à legitimidade das partes e ao interesse processual.</p></div></div>\n   <div class=\"callout\">Ter direito de ação não significa vencer. Significa poder obter uma resposta jurisdicional.</div>"
+    },
+    {
+     "id": "p1-4",
+     "h": "A relação jurídica processual",
+     "body": "<ul class=\"styled-list\">\n   <li><strong>Fato</strong> — acontecimento qualquer</li><li><strong>Fato jurídico</strong> — com repercussão jurídica (dano → indenização)</li>\n   <li><strong>Ato jurídico</strong> — depende da vontade humana</li><li><strong>Negócio jurídico</strong> — fato que repercute na economia</li></ul>\n   <div class=\"table-wrap\"><table class=\"styled-table\"><tr><th>Sujeito</th><th>Posição</th><th>Papel</th></tr>\n   <tr><td>Estado-Juiz</td><td>Sujeito processual, <strong>não é parte</strong></td><td>Exerce a jurisdição, com imparcialidade</td></tr>\n   <tr><td>Autor</td><td>Polo ativo · é parte</td><td>Exerce o direito de ação</td></tr>\n   <tr><td>Réu</td><td>Polo passivo · é parte</td><td>Exerce o direito de defesa — resistência</td></tr></table></div>"
+    },
+    {
+     "id": "p1-5",
+     "h": "Conceitos avulsos e vocabulário",
+     "body": "<ul class=\"styled-list\">\n   <li>Voto minerva · Dura lex</li><li>Medida cautelar · Tutela provisória · Liminar</li>\n   <li>Citação x intimação</li><li>Juizados especiais</li><li>Embargo de execução · Impugnação</li>\n   <li>Expropriação · Ação monitória · Escritura pública</li></ul>\n   <div class=\"callout callout-success\"><strong>Fica a dica da aula:</strong> desconfie do estagiário.</div>"
+    }
+   ],
+   "casos": [
+    {
+     "t": "Desforço imediato: autotutela que sobreviveu",
+     "resumo": "O possuidor esbulhado reage de imediato para retomar a posse.",
+     "detalhe": "É a exceção que confirma a regra: o Estado monopoliza a solução de conflitos. Serve em aula para mostrar por que a jurisdição estatal surgiu — substituir a força pela decisão."
+    },
+    {
+     "t": "Cláusula compromissória de arbitragem",
+     "resumo": "Contrato prevê que o conflito será resolvido por arbitragem.",
+     "detalhe": "Jurisdição privada da Lei nº 9.307/96. Conecta com a Aula 3: a convenção de arbitragem é preliminar (art. 337, X) e, se não alegada, o §6º considera aceita a jurisdição estatal."
+    }
+   ]
+  },
+  "flash": [
+   {
+    "aula": 1,
+    "f": "O que significa 'juris dictio'?",
+    "b": "'Dizer o direito' — origem romana do termo jurisdição. A figura do pretor."
+   },
+   {
+    "aula": 1,
+    "f": "Qual lei rege a arbitragem?",
+    "b": "Lei nº 9.307/96. Forma alternativa e facultativa — a jurisdição privada."
+   },
+   {
+    "aula": 1,
+    "f": "Fundamento da jurisdição inerte",
+    "b": "CF, art. 5º, XXXV. A jurisdição depende de provocação da parte."
+   },
+   {
+    "aula": 1,
+    "f": "Direito de ação x ação",
+    "b": "Direito de ação: abstrato, incondicional, constitucional. Ação: materializada na petição inicial, condicionada à legitimidade e ao interesse."
+   }
+  ],
+  "questions": [
+   {
+    "q": "A jurisdição no Brasil é, em regra:",
+    "opts": [
+     "Ativa, de ofício",
+     "Inerte, dependendo de provocação (CF, art. 5º, XXXV)",
+     "Exclusivamente privada",
+     "Facultativa"
+    ],
+    "correct": 1,
+    "exp": "A jurisdição estatal precisa ser provocada pela parte.",
+    "aula": 1
+   },
+   {
+    "q": "A ação é materializada em qual peça?",
+    "opts": [
+     "Contestação",
+     "Petição inicial",
+     "Sentença",
+     "Agravo"
+    ],
+    "correct": 1,
+    "exp": "A petição inicial é a materialização da ação.",
+    "aula": 1
+   }
+  ]
+ },
+ "penal": {
+  "nome": "Proteção Penal",
+  "curto": "Penal",
+  "tagline": "Crimes contra a pessoa: do homicídio à lesão corporal, no Código Penal.",
+  "lesson": {
+   "id": 1,
+   "title": "Homicídio: simples, privilegiado e qualificado",
+   "subtitle": "Aula 1 — Crimes contra a vida e o art. 121 do Código Penal em suas três espécies dolosas.",
+   "sections": [
+    {
+     "id": "pe1-1",
+     "h": "Panorama dos crimes contra a vida",
+     "body": "\n   <p>Os crimes contra a vida estão dispostos <strong>do art. 121 ao art. 128 do CP</strong>. Salvo os expressamente previstos como culposos, todos são dolosos e vão a julgamento perante o <strong>Tribunal do Júri</strong> (CF, art. 5º, XXXVIII).</p>\n   <div class=\"table-wrap\"><table class=\"styled-table\">\n   <tr><th>Espécie</th><th>Dispositivo</th></tr>\n   <tr><td>Homicídio simples</td><td>Art. 121, <em>caput</em></td></tr>\n   <tr><td>Homicídio privilegiado</td><td>Art. 121, § 1º</td></tr>\n   <tr><td>Homicídio qualificado</td><td>Art. 121, § 2º</td></tr>\n   <tr><td>Homicídio culposo</td><td>Art. 121, §§ 3º e 4º</td></tr></table></div>\n   <div class=\"callout\">Não por acaso o homicídio <strong>inaugura a Parte Especial</strong> do Código Penal: é o crime que lesa o mais relevante dos bens jurídicos, a vida humana.</div>"
+    },
+    {
+     "id": "pe1-2",
+     "h": "Homicídio simples (art. 121, caput)",
+     "body": "\n   <span class=\"badge badge-lei\">Art. 121 do CP</span>\n   <p>É o ato de matar outra pessoa de forma <strong>dolosa</strong>. Chama-se simples por não apresentar qualificadoras (que aumentam a pena) nem privilégio (que a reduz).</p>\n   <div class=\"table-wrap\"><table class=\"styled-table\">\n   <tr><th>Elemento</th><th>Conteúdo</th></tr>\n   <tr><td><strong>Objeto jurídico</strong></td><td>A vida humana <strong>extrauterina</strong>, que passa a existir depois do início do parto. Imperativo da ordem constitucional (art. 5º, <em>caput</em>)</td></tr>\n   <tr><td><strong>Sujeito ativo</strong></td><td>Qualquer pessoa — <strong>crime comum</strong> e de forma livre, em grupo ou não, com ou sem armas</td></tr>\n   <tr><td><strong>Sujeito passivo</strong></td><td>Qualquer ser humano, a partir do início do parto</td></tr>\n   <tr><td><strong>Consumação</strong></td><td>Sempre com a <strong>morte</strong> da vítima</td></tr>\n   <tr><td><strong>Tentativa</strong></td><td>Quando o resultado não se produz por circunstâncias <strong>alheias à vontade</strong> do agente</td></tr></table></div>\n   <p>Segundo Hungria, o sujeito passivo é o \"ser vivo nascido de mulher\": não importa a condição da pessoa, configurando-se o homicídio mesmo contra o recém-nascido inviável ou na supressão do minuto de vida que reste ao moribundo.</p>\n   <div class=\"callout callout-warning\">Se a interrupção da execução decorrer da <strong>própria vontade</strong> do agente, não há tentativa, mas <strong>desistência voluntária</strong>.</div>"
+    },
+    {
+     "id": "pe1-3",
+     "h": "Tipo objetivo, meios de execução e nexo causal",
+     "body": "\n   <p>A conduta típica é <strong>matar</strong>, ou seja, extinguir a vida. Crime de <strong>forma livre</strong>, praticável por ação ou por omissão — nesta última, quando o agente tinha o dever de impedir o resultado e podia fazê-lo (<strong>art. 13, § 2º, do CP</strong>).</p>\n   <div class=\"caracteristicas-grid\">\n     <div class=\"carac-card\"><div class=\"carac-num\">QUANTO À VIA</div><h4>Diretos e indiretos</h4><p class=\"small muted\">Direto: o agente usa pessoalmente o instrumento letal. Indireto: vale-se de um irresponsável ou de um animal.</p></div>\n     <div class=\"carac-card\"><div class=\"carac-num\">QUANTO À NATUREZA</div><h4>Físicos, patológicos e morais</h4><p class=\"small muted\">Físicos: armas, meios mecânicos ou químicos. Patológicos: transmissão de moléstia por vírus ou bactéria. Morais: provocação de emoção violenta a um cardíaco.</p></div>\n   </div>\n   <div class=\"callout\"><strong>Nexo causal (art. 13):</strong> tratando-se de crime <strong>material</strong>, é indispensável verificar a ligação entre a conduta e o resultado morte.</div>\n   <p><strong>Consumação:</strong> crime <strong>instantâneo de efeitos permanentes</strong>. Instantâneo porque a consumação se dá em momento preciso; de efeitos permanentes porque a consequência não se restaura. Pela <strong>Lei nº 9.434/97</strong>, o fim da atividade cerebral — a morte encefálica — significa o fim da vida.</p>"
+    },
+    {
+     "id": "pe1-4",
+     "h": "Tipo subjetivo: o animus necandi",
+     "body": "\n   <p>O dolo é a <strong>vontade de matar alguém</strong>, não se exigindo qualquer fim especial. Há por parte do autor o <strong><em>animus necandi</em></strong> (ou <em>occidendi</em>).</p>\n   <p>O crime admite <strong>dolo direto</strong> (propósito de eliminar a vida) e <strong>dolo eventual</strong> (o agente assume o risco de produzir o resultado morte).</p>\n   <div class=\"callout callout-warning\"><strong>Distinção decisiva:</strong> havendo <em>animus necandi</em> e não se consumando o evento, configura-se <strong>tentativa de homicídio</strong> — e não lesão corporal. Devem ser analisadas as circunstâncias objetivas do caso concreto para deduzir o dolo do agente.</div>"
+    },
+    {
+     "id": "pe1-5",
+     "h": "Homicídio privilegiado (art. 121, § 1º)",
+     "body": "\n   <p>Não é delito autônomo, e sim <strong>causa de diminuição de pena</strong>, de <strong>1/6 a 1/3</strong>, conjugada com o <em>caput</em>. Pode resultar em pena menor que a pena base.</p>\n   <div class=\"caracteristicas-grid\">\n     <div class=\"carac-card\"><div class=\"carac-num\">FIGURA 1</div><h4>Relevante valor social</h4><p class=\"small muted\">O delito é entendido pela sociedade como justificável — diz respeito aos interesses da vida coletiva. Ex.: patriota que mata traidor da pátria.</p></div>\n     <div class=\"carac-card\"><div class=\"carac-num\">FIGURA 2</div><h4>Relevante valor moral</h4><p class=\"small muted\">Questão moral individual, movida por compaixão e piedade. A <strong>eutanásia</strong> não teve a culpabilidade excluída no direito brasileiro, mas o agente goza de diminuição de pena.</p></div>\n     <div class=\"carac-card\"><div class=\"carac-num\">FIGURA 3</div><h4>Violenta emoção após injusta provocação</h4><p class=\"small muted\">Elemento temporal: exige as <strong>duas figuras</strong>. \"Logo em seguida\" significa que o ato deve ocorrer imediatamente após a provocação, com o agente já sob forte emoção.</p></div>\n   </div>\n   <div class=\"callout\">Note que as circunstâncias do privilégio são todas <strong>subjetivas</strong> — isso será decisivo no tópico do homicídio qualificado-privilegiado.</div>"
+    },
+    {
+     "id": "pe1-6",
+     "h": "Qualificadoras: motivos (incisos I e II)",
+     "body": "\n   <p>As qualificadoras do § 2º dizem respeito a <strong>motivos</strong> (I, II, VI, VII e IX), <strong>meios</strong> (III e VIII), <strong>modos</strong> (IV) e <strong>fins</strong> (V). Podem coexistir, desde que compatíveis.</p>\n   <p><strong>I — Mediante paga ou promessa de recompensa, ou por outro motivo torpe</strong> (subjetiva)</p>\n   <ul class=\"styled-list\">\n     <li><strong>Paga:</strong> valor ou vantagem recebida <strong>antecipadamente</strong> — é o homicídio mercenário</li>\n     <li><strong>Promessa de recompensa:</strong> pagamento <strong>futuro</strong></li>\n     <li>Nenhuma das duas precisa ter natureza patrimonial: pode ser promessa de casamento ou de relação sexual</li>\n   </ul>\n   <div class=\"callout callout-warning\"><strong>Divergência sobre o mandante:</strong> parte da doutrina entende que a qualificadora só alcança o executor, podendo a conduta do mandante amoldar-se a motivo torpe, fútil ou até de relevante valor. Já o <strong>STJ</strong> decidiu que, por ser <strong>elemento do tipo qualificado</strong>, a circunstância não atinge exclusivamente o executor, mas também o mandante ou qualquer coautor (HC 99.144/RJ, Rel. Min. Og Fernandes, 6ª T.).</div>\n   <p><strong>Motivo torpe</strong> é o abjeto, repugnante, ignóbil, desprezível, profundamente imoral — o mais baixo na escala de valores éticos. Ex.: matar para receber herança, por rivalidade profissional.</p>\n   <p><strong>II — Por motivo fútil</strong> (subjetiva): motivo sem importância, frívolo, insignificante. Há <strong>inteira desproporção</strong> entre o crime e a motivação. Segundo Heleno Fragoso, é aquele desproporcionado com a gravidade da reação homicida, tendo em vista a sensibilidade moral média. Os tribunais têm reconhecido como fútil o rompimento de namoro e a discussão familiar sem importância.</p>"
+    },
+    {
+     "id": "pe1-7",
+     "h": "Ciúme, vingança, embriaguez e ausência de motivo",
+     "body": "\n   <p>Estes quatro pontos concentram a jurisprudência mais cobrada sobre as qualificadoras subjetivas.</p>\n   <div class=\"table-wrap\"><table class=\"styled-table\">\n   <tr><th>Situação</th><th>Entendimento predominante</th></tr>\n   <tr><td><strong>Ciúme</strong></td><td>Não pode ser equiparado <em>a priori</em> a motivo torpe nem fútil. Pode inserir-se no inciso I ou II, ou mesmo no <strong>privilégio</strong> do § 1º — análise caso a caso (STJ, AgRg no AREsp 363.919/PR)</td></tr>\n   <tr><td><strong>Vingança</strong></td><td>Pode ou não constituir motivo torpe, <strong>na dependência do que a originou</strong>. Por si só não substantiva a torpeza, mas sua afirmativa também não elide a imputação — afere-se à luz do contexto (STF, HC 83.309)</td></tr>\n   <tr><td><strong>Embriaguez</strong></td><td><strong>Não afasta</strong> o reconhecimento da futilidade. A embriaguez voluntária ou culposa não exclui a imputabilidade penal (STJ, REsp 908.396/MG)</td></tr>\n   <tr><td><strong>Ausência de motivo</strong></td><td><strong>Não se confunde</strong> com motivo fútil. Praticado o fato sem razão alguma, incide apenas o homicídio simples, à luz do princípio da reserva legal (STJ, HC 152.548/MG)</td></tr></table></div>\n   <div class=\"callout callout-warning\"><strong>Ponto de prova clássico:</strong> ausência de motivo ≠ motivo fútil. Fútil pressupõe um motivo que exista, mas seja insignificante.</div>"
+    },
+    {
+     "id": "pe1-8",
+     "h": "Qualificadoras: meios (inciso III)",
+     "body": "\n   <p><strong>III — Com emprego de veneno, fogo, explosivo, asfixia, tortura ou outro meio insidioso ou cruel, ou de que possa resultar perigo comum</strong> (objetiva).</p>\n   <div class=\"table-wrap\"><table class=\"styled-table\">\n   <tr><th>Meio</th><th>Caracterização</th></tr>\n   <tr><td><strong>Veneno</strong></td><td>Deve ser ministrado <strong>insidiosamente</strong>, sem conhecimento da vítima</td></tr>\n   <tr><td><strong>Fogo</strong></td><td>Meio extremamente cruel de execução</td></tr>\n   <tr><td><strong>Explosivo</strong></td><td>Traz perigo a número indeterminado de pessoas</td></tr>\n   <tr><td><strong>Asfixia</strong></td><td>Supressão da respiração. Pode ser mecânica ou tóxica</td></tr>\n   <tr><td><strong>Tortura</strong></td><td>Meio para alcançar o resultado morte</td></tr></table></div>\n   <p><strong>Meio insidioso:</strong> uso de fraude ou armadilha, clandestinos, que impedem a vítima de saber que está sendo atacada. Ex.: sabotar o motor de um automóvel, colocar veneno na comida.</p>\n   <p><strong>Meio cruel:</strong> sujeitar a vítima a graves e inúteis vexames ou sofrimentos. Meio bárbaro, que aumenta inutilmente o padecimento, partido de ânimo calmo que permite a escolha do modo de infligir sofrimento.</p>\n   <div class=\"callout\"><strong>Não é preciso que seja insidioso <em>e</em> cruel</strong> — basta um ou outro.</div>\n   <p><strong>Formas de asfixia mecânica</strong> (Hungria): oclusão dos orifícios respiratórios (sufocação direta); oclusão das vias aéreas; compressão da caixa torácica (sufocação indireta); supressão funcional do campo respiratório. Processos: enforcamento, imprensamento, estrangulamento, afogamento, submersão, esganadura.</p>\n   <div class=\"callout callout-warning\"><strong>Tortura no homicídio × Lei nº 9.455/97:</strong> no homicídio a tortura é <strong>meio</strong> para alcançar a morte; na legislação específica, é <strong>fim em si mesma</strong>.</div>\n   <div class=\"callout\"><strong>Crueldade post mortem não qualifica.</strong> Esquartejar pessoa ainda viva é meio cruel; esquartejá-la após a morte não induz a qualificadora.</div>"
+    },
+    {
+     "id": "pe1-9",
+     "h": "Qualificadoras: modo (IV) e fim (V)",
+     "body": "\n   <p><strong>IV — À traição, de emboscada, ou mediante dissimulação ou outro recurso que dificulte ou torne impossível a defesa do ofendido</strong> (objetiva).</p>\n   <ul class=\"styled-list\">\n     <li><strong>Traição:</strong> segundo Nucci, é a ação que colhe a vítima por trás, desprevenida, sem qualquer visualização do ataque. <em>Ataque súbito pela frente pode ser surpresa, mas não traição.</em></li>\n     <li><strong>Emboscada:</strong> espécie de traição em que o agente se coloca escondido, de tocaia, aguardando a vítima passar</li>\n     <li><strong>Dissimulação:</strong> ocultar a intenção homicida, fazendo-se passar por amigo ou conselheiro</li>\n     <li><strong>Dificultar</strong> é um <em>minus</em> em relação a <strong>tornar impossível</strong>: naquele a vítima ainda tem alguma possibilidade de defesa; neste, eliminam-se completamente as chances — ex.: matar a vítima enquanto dorme</li>\n   </ul>\n   <p><strong>V — Para assegurar a execução, a ocultação, a impunidade ou a vantagem de outro crime</strong> (subjetiva). Exige <strong>conexão</strong> com outro delito.</p>\n   <div class=\"table-wrap\"><table class=\"styled-table\">\n   <tr><th>Conexão</th><th>Momento</th><th>Exemplo</th></tr>\n   <tr><td><strong>Teleológica</strong></td><td>Homicídio como <strong>meio</strong> para executar crime <strong>futuro</strong></td><td>Matar o vigilante na véspera do roubo à agência</td></tr>\n   <tr><td><strong>Consequencial</strong></td><td>Homicídio para ocultar, assegurar impunidade ou vantagem de crime <strong>já cometido</strong></td><td>Matar a única testemunha do homicídio anterior</td></tr></table></div>\n   <div class=\"callout\"><strong>Ocultação × impunidade:</strong> na ocultação, pretende-se manter a infração <strong>desconhecida</strong>; na impunidade, a infração é conhecida, mas a <strong>autoria</strong> ainda é ignorada.</div>"
+    },
+    {
+     "id": "pe1-10",
+     "h": "Homicídio qualificado-privilegiado e crime hediondo",
+     "body": "\n   <p>Há controvérsia doutrinária, mas o entendimento mais acertado é que a figura é <strong>possível</strong>, desde que a qualificadora seja <strong>objetiva</strong> — já que as circunstâncias do privilégio são <strong>subjetivas</strong>.</p>\n   <div class=\"table-wrap\"><table class=\"styled-table\">\n   <tr><th>Qualificadora</th><th>Natureza</th><th>Compatível com o privilégio?</th></tr>\n   <tr><td>§ 2º, I — paga ou motivo torpe</td><td>Subjetiva (motivo)</td><td><strong>Não</strong></td></tr>\n   <tr><td>§ 2º, II — motivo fútil</td><td>Subjetiva (motivo)</td><td><strong>Não</strong></td></tr>\n   <tr><td>§ 2º, III — meio</td><td>Objetiva</td><td><strong>Sim</strong></td></tr>\n   <tr><td>§ 2º, IV — modo de execução</td><td>Objetiva</td><td><strong>Sim</strong></td></tr>\n   <tr><td>§ 2º, V — fim conexo a outro crime</td><td>Subjetiva (fim)</td><td><strong>Não</strong></td></tr></table></div>\n   <div class=\"callout callout-warning\"><strong>Crime hediondo:</strong> o homicídio qualificado é hediondo (Lei nº 8.072/90, art. 1º, I, segunda parte). O <strong>homicídio qualificado-privilegiado NÃO é hediondo</strong> — a lei não o menciona, e a extensão violaria o princípio da reserva legal (STJ, HC 153.728, Rel. Min. Felix Fischer, 5ª T.).</div>"
+    },
+    {
+     "id": "pe1-11",
+     "h": "Distinção: homicídio e latrocínio",
+     "body": "\n   <p>Em situações que envolvem subtração e morte, o critério decisivo é o <strong>elemento anímico</strong> — a intenção primeira do agente.</p>\n   <div class=\"table-wrap\"><table class=\"styled-table\">\n   <tr><th></th><th>Homicídio em concurso com furto</th><th>Latrocínio (art. 157, § 3º)</th></tr>\n   <tr><td>Intenção primeira</td><td>Matar a pessoa</td><td>O patrimônio</td></tr>\n   <tr><td>O outro elemento</td><td>A subtração é <strong>meramente casual</strong></td><td>A morte é causada, dolosa ou culposamente, nesse contexto</td></tr>\n   <tr><td>Bem jurídico visado</td><td>A vida</td><td>O patrimônio</td></tr></table></div>\n   <div class=\"callout\">Se o sujeito visa fundamentalmente atingir a <strong>vida</strong>, afetando apenas ocasionalmente a esfera patrimonial, afasta-se a complexidade delitiva do latrocínio e tipifica-se o <strong>cúmulo material</strong>.</div>"
+    },
+    {
+     "id": "pe1-12",
+     "h": "Iter criminis e as excludentes de ilicitude",
+     "body": "<span class=\"badge badge-comp\">Complemento</span>\n   <p class=\"comp-note\">Conteúdo acrescentado para completar o tema — não constava no material de aula.</p>\n   <p>Antes de afirmar que houve homicídio, é preciso percorrer duas verificações: <strong>em que fase</strong> a conduta parou, e se <strong>havia justificativa</strong> para ela.</p>\n   <h4 style=\"margin-top:22px\">Iter criminis</h4>\n   <div class=\"table-wrap\"><table class=\"styled-table\">\n   <tr><th>Fase</th><th>Descrição</th><th>Punível?</th></tr>\n   <tr><td><strong>Cogitação</strong></td><td>A ideia, no plano interno</td><td>Não — <em>cogitationis poenam nemo patitur</em></td></tr>\n   <tr><td><strong>Atos preparatórios</strong></td><td>Providências anteriores à execução</td><td>Em regra não, salvo se constituírem crime autônomo</td></tr>\n   <tr><td><strong>Execução</strong></td><td>Início da agressão ao bem jurídico</td><td><strong>Sim</strong> — a partir daqui há tentativa</td></tr>\n   <tr><td><strong>Consumação</strong></td><td>Reunião de todos os elementos do tipo</td><td>Sim</td></tr></table></div>\n   <div class=\"artigo\"><strong>Art. 14, II</strong> — Diz-se o crime tentado quando, iniciada a execução, não se consuma por circunstâncias alheias à vontade do agente. <strong>Parágrafo único:</strong> pune-se a tentativa com a pena do crime consumado, diminuída de <strong>1/3 a 2/3</strong>.<br><br><strong>Art. 15</strong> — O agente que, voluntariamente, desiste de prosseguir na execução (<strong>desistência voluntária</strong>) ou impede que o resultado se produza (<strong>arrependimento eficaz</strong>), só responde pelos atos já praticados.</div>\n   <div class=\"callout callout-success\"><strong>A fórmula de Frank:</strong> \"posso, mas não quero\" → desistência voluntária. \"Quero, mas não posso\" → tentativa.</div>\n   <p><strong>Crime impossível</strong> (art. 17): por absoluta ineficácia do meio ou absoluta impropriedade do objeto, não se pune a tentativa. Ex.: disparar contra cadáver.</p>\n   <h4 style=\"margin-top:26px\">Excludentes de ilicitude (art. 23)</h4>\n   <div class=\"caracteristicas-grid\">\n     <div class=\"carac-card\"><div class=\"carac-num\">I</div><h4>Estado de necessidade</h4><p class=\"small muted\">Art. 24 — perigo atual não provocado voluntariamente, sacrificando direito cujo sacrifício era razoável exigir.</p></div>\n     <div class=\"carac-card\"><div class=\"carac-num\">II</div><h4>Legítima defesa</h4><p class=\"small muted\">Art. 25 — repele injusta agressão, atual ou iminente, a direito seu ou de outrem, usando moderadamente os meios necessários.</p></div>\n     <div class=\"carac-card\"><div class=\"carac-num\">III</div><h4>Estrito cumprimento de dever legal</h4><p class=\"small muted\">A conduta é determinada por lei ao agente público.</p></div>\n     <div class=\"carac-card\"><div class=\"carac-num\">IV</div><h4>Exercício regular de direito</h4><p class=\"small muted\">O ordenamento autoriza a conduta.</p></div>\n   </div>\n   <div class=\"callout callout-warning\"><strong>Requisitos da legítima defesa</strong> (todos cumulativos): agressão <strong>injusta</strong>; <strong>atual ou iminente</strong>; a direito próprio ou alheio; repelida com os <strong>meios necessários</strong>; usados <strong>moderadamente</strong>. Faltando moderação, há <strong>excesso</strong>, punível a título de dolo ou culpa (art. 23, parágrafo único).</div>\n   <div class=\"table-wrap\"><table class=\"styled-table\">\n   <tr><th>Situação</th><th>Enquadramento</th></tr>\n   <tr><td>Agressão <strong>passada</strong> — o agressor já fugiu</td><td>Não é legítima defesa: é <strong>vingança</strong>. Responde por homicídio</td></tr>\n   <tr><td>Agressão <strong>futura e remota</strong> — ameaça de matar amanhã</td><td>Não é legítima defesa (falta atualidade ou iminência)</td></tr>\n   <tr><td>Reação desproporcional a agressão real</td><td>Excesso — responde pelo excesso, doloso ou culposo</td></tr>\n   <tr><td>Legítima defesa <strong>putativa</strong></td><td>Erro sobre a situação de fato (art. 20, § 1º) — exclui o dolo; se o erro for evitável, responde por culpa</td></tr></table></div>\n   <div class=\"callout\"><strong>Por que isto importa no art. 121:</strong> a existência de excludente é a primeira tese defensiva no Tribunal do Júri. Reconhecida a legítima defesa, o réu é <strong>absolvido</strong>, ainda que a morte tenha ocorrido.</div>"
+    },
+    {
+     "id": "pe1-13",
+     "h": "O Tribunal do Júri: como o processo caminha",
+     "body": "<span class=\"badge badge-comp\">Complemento</span>\n   <p>Como todos os crimes dolosos contra a vida são de competência do Júri (CF, art. 5º, XXXVIII), vale conhecer o rito — ele é <strong>bifásico</strong>.</p>\n   <div class=\"table-wrap\"><table class=\"styled-table\">\n   <tr><th>Fase</th><th>Nome</th><th>O que se decide</th><th>Encerramento</th></tr>\n   <tr><td><strong>1ª</strong></td><td><em>Judicium accusationis</em> (sumário da culpa)</td><td>Se há indícios suficientes de autoria e prova da materialidade</td><td>Decisão de pronúncia, impronúncia, absolvição sumária ou desclassificação</td></tr>\n   <tr><td><strong>2ª</strong></td><td><em>Judicium causae</em></td><td>O mérito, pelos jurados</td><td>Sentença do juiz-presidente, conforme o veredicto</td></tr></table></div>\n   <div class=\"table-wrap\"><table class=\"styled-table\">\n   <tr><th>Decisão</th><th>Significado</th><th>Recurso</th></tr>\n   <tr><td><strong>Pronúncia</strong></td><td>Há indícios de autoria e prova da materialidade — o réu vai a júri. Vale o <em>in dubio pro societate</em></td><td>Recurso em sentido estrito</td></tr>\n   <tr><td><strong>Impronúncia</strong></td><td>Faltam indícios suficientes — não há juízo de mérito, e nova ação é possível surgindo prova nova</td><td>Apelação</td></tr>\n   <tr><td><strong>Absolvição sumária</strong></td><td>Provada excludente de ilicitude ou culpabilidade, atipicidade ou inexistência do fato</td><td>Apelação</td></tr>\n   <tr><td><strong>Desclassificação</strong></td><td>O crime não é doloso contra a vida — remete-se ao juízo competente</td><td>Recurso em sentido estrito</td></tr></table></div>\n   <div class=\"callout callout-warning\"><strong>Vedação ao excesso de linguagem:</strong> na pronúncia o juiz deve limitar-se a indicar a materialidade e os indícios de autoria. Aprofundar-se no mérito influenciaria os jurados e gera nulidade.</div>\n   <p><strong>Os princípios constitucionais do Júri:</strong> plenitude de defesa; sigilo das votações; soberania dos veredictos; e competência para o julgamento dos crimes dolosos contra a vida.</p>\n   <div class=\"callout\"><strong>Soberania relativizada:</strong> a decisão dos jurados é soberana, mas cabe apelação quando manifestamente contrária à prova dos autos (CPP, art. 593, III, \"d\") — hipótese em que se determina <strong>novo júri</strong>, e apenas uma vez pelo mesmo motivo.</div>"
+    }
+   ],
+   "casos": [
+    {
+     "t": "O tiro que não matou",
+     "resumo": "O agente dispara contra a vítima com intenção de matar, mas ela sobrevive com lesões graves.",
+     "detalhe": "A resposta depende do elemento subjetivo. Presente o animus necandi e não consumado o resultado por circunstâncias alheias à vontade do agente, há tentativa de homicídio — e não lesão corporal, ainda que o resultado material tenha sido apenas a lesão. Devem ser analisadas as circunstâncias objetivas (arma utilizada, região atingida, número de disparos, reiteração) para deduzir o dolo."
+    },
+    {
+     "t": "O mandante e a qualificadora da paga",
+     "resumo": "Alguém contrata um executor para matar seu desafeto. A qualificadora do inciso I alcança quem pagou?",
+     "detalhe": "Há duas correntes. Parte da doutrina entende que a qualificadora da paga só atinge quem a recebeu — o executor —, podendo a conduta do mandante amoldar-se a outro motivo (torpe, fútil, ou até relevante valor). O STJ, porém, decidiu que, por ser elemento do tipo qualificado, a circunstância não atinge exclusivamente o executor, mas também o mandante ou qualquer coautor (HC 99.144/RJ)."
+    },
+    {
+     "t": "Marido mata a esposa após flagrá-la traindo",
+     "resumo": "O agente mata sob forte abalo emocional, imediatamente após presenciar a traição, usando arma de fogo pelas costas.",
+     "detalhe": "Duas análises se cruzam. Quanto ao privilégio, discute-se se houve injusta provocação e violenta emoção 'logo em seguida' — a jurisprudência tende a não reconhecer o ciúme, por si só, como torpe ou fútil, analisando caso a caso. Quanto à qualificadora, o disparo pelas costas configura recurso que dificulta a defesa (inciso IV), circunstância objetiva. Sendo objetiva, é compatível com o privilégio: seria hipótese de homicídio qualificado-privilegiado, que não é crime hediondo."
+    }
+   ]
+  },
+  "flash": [
+   {
+    "aula": 1,
+    "f": "Onde estão os crimes contra a vida?",
+    "b": "Arts. 121 a 128 do CP. Salvo os culposos expressamente previstos, todos são dolosos e vão ao Tribunal do Júri."
+   },
+   {
+    "aula": 1,
+    "f": "As três espécies de homicídio doloso",
+    "b": "Simples (caput), privilegiado (§ 1º) e qualificado (§ 2º) do art. 121."
+   },
+   {
+    "aula": 1,
+    "f": "Objeto jurídico do homicídio",
+    "b": "A vida humana extrauterina, que passa a existir depois do início do parto. Imperativo constitucional (art. 5º, caput)."
+   },
+   {
+    "aula": 1,
+    "f": "O que é animus necandi?",
+    "b": "A vontade de matar — o dolo do homicídio. Não se exige qualquer fim especial."
+   }
+  ],
+  "questions": [
+   {
+    "q": "Onde estão dispostos os crimes contra a vida no Código Penal?",
+    "opts": [
+     "Arts. 100 a 120",
+     "Arts. 121 a 128",
+     "Arts. 129 a 140",
+     "Arts. 155 a 170"
+    ],
+    "correct": 1,
+    "exp": "Do art. 121 ao 128. Salvo os culposos expressamente previstos, todos são dolosos e vão ao Tribunal do Júri.",
+    "aula": 1
+   },
+   {
+    "q": "Quais são as três espécies de homicídio doloso?",
+    "opts": [
+     "Simples, culposo e qualificado",
+     "Simples, privilegiado e qualificado",
+     "Doloso, culposo e preterdoloso",
+     "Comum, próprio e bipróprio"
+    ],
+    "correct": 1,
+    "exp": "Art. 121, caput (simples), § 1º (privilegiado) e § 2º (qualificado).",
+    "aula": 1
+   }
+  ]
+ },
+ "obrigacoes": {
+  "nome": "Direito das Obrigações Civis",
+  "curto": "Obrigações",
+  "tagline": "Dos elementos da obrigação à solidariedade, com base no Código Civil.",
+  "lesson": {
+   "id": 1,
+   "title": "Conceito, elementos e estrutura",
+   "subtitle": "O que é uma obrigação civil, seus elementos e como se distingue da relação jurídica em geral.",
+   "sections": [
+    {
+     "id": "o1-1",
+     "h": "Relação jurídica x relação jurídica obrigacional",
+     "body": "\n   <p>A <strong>relação jurídica</strong> (gênero) é o vínculo reconhecido pelo ordenamento entre duas ou mais pessoas, do qual surgem direitos e deveres mútuos. Seu ponto de partida é sempre um <strong>fato jurídico</strong>.</p>\n   <p>A <strong>relação jurídica obrigacional</strong> (espécie) também nasce de um fato jurídico, mas se distingue pelo objeto: a prestação tem <strong>conteúdo patrimonial</strong>, com expressão econômica direta ou indireta.</p>\n   <div class=\"artigo\"><strong>CC, Art. 1º</strong> — Toda pessoa é capaz de direitos e deveres na ordem civil.</div>\n   <div class=\"callout\">Em paralelo, diplomas de ordem pública e interesse social — como o <strong>CDC (Lei nº 8.078/1990)</strong> — regulam relações específicas para proteger sujeitos vulneráveis, com regras de observância obrigatória.</div>\n   <p>Segundo <strong>Carlos Roberto Gonçalves</strong>, o direito das obrigações consiste num complexo de normas que regem relações jurídicas de ordem patrimonial, tendo por objeto prestações de um sujeito em proveito de outro.</p>"
+    },
+    {
+     "id": "o1-2",
+     "h": "Elementos constitutivos da obrigação",
+     "body": "\n   <p>A fórmula básica é: <strong>credor + devedor + prestação + vínculo jurídico</strong>.</p>\n   <div class=\"table-wrap\"><table class=\"styled-table\">\n   <tr><th>Elemento</th><th>Conceito</th><th>Exemplo</th></tr>\n   <tr><td><strong>Sujeito ativo</strong></td><td>O credor, titular do direito de exigir a prestação</td><td>O comprador que pode exigir a entrega do produto</td></tr>\n   <tr><td><strong>Sujeito passivo</strong></td><td>O devedor, obrigado a cumprir a prestação</td><td>O vendedor que deve entregar o produto</td></tr>\n   <tr><td><strong>Objeto</strong></td><td>A prestação devida: dar, fazer ou não fazer</td><td>Entregar um bem, prestar um serviço, não divulgar informação</td></tr>\n   <tr><td><strong>Vínculo jurídico</strong></td><td>A ligação que permite exigir a prestação</td><td>A possibilidade de cobrar judicialmente</td></tr></table></div>\n   <p>Tradicionalmente, fala-se em três elementos: o <strong>subjetivo</strong> (os sujeitos), o <strong>objetivo ou material</strong> (a prestação) e o <strong>vínculo jurídico</strong> ou elemento imaterial.</p>"
+    },
+    {
+     "id": "o1-3",
+     "h": "Sujeito ativo: o credor (accipiens)",
+     "body": "\n   <p>O credor, também chamado <strong>accipiens</strong>, é, nas palavras de <strong>Maria Helena Diniz</strong>, aquele a quem a prestação — positiva ou negativa — é devida, tendo por isso o direito de exigi-la.</p>\n   <p>O credor pode ser <strong>único ou coletivo</strong>. Sendo coletivo, terá direito a uma quota-parte ou à totalidade da prestação, conforme a natureza da relação creditória.</p>\n   <div class=\"callout\">Uma mesma relação contratual pode conter <strong>obrigações recíprocas</strong>. Na compra e venda, o comprador é credor da entrega do bem e devedor do pagamento; simultaneamente, o vendedor é credor do pagamento e devedor da entrega.</div>"
+    },
+    {
+     "id": "o1-4",
+     "h": "Sujeito passivo: o devedor (solvens)",
+     "body": "\n   <p>O devedor, ou <strong>solvens</strong>, deve cumprir a prestação obrigacional, limitando sua liberdade: deverá <strong>dar, fazer ou não fazer</strong> algo em atenção ao interesse de outrem. Não cumprindo, poderá <strong>responder com seu patrimônio</strong>.</p>\n   <p>Pode ser único ou plural. Havendo mais de um devedor, a prestação consistirá numa <strong>fração do objeto</strong> ou na <strong>totalidade</strong>.</p>\n   <div class=\"callout\"><strong>Exemplo:</strong> numa dívida de R$ 100 com <strong>10 devedores</strong>, cada um responde por R$ 10 de sua parte. Se um deles pagar os R$ 100 integralmente, terá <strong>direito regressivo</strong> contra os codevedores quanto à parte proporcional que lhes cabe — ou seja, cobra R$ 10 de cada um.</div>\n   <div class=\"callout callout-warning\"><strong>Atenção à precisão:</strong> o direito de regresso alcança a <strong>quota-parte</strong> de cada codevedor, não o valor total da dívida. Alguns resumos redigem isso de forma ambígua.</div>"
+    },
+    {
+     "id": "o1-5",
+     "h": "O vínculo jurídico: débito e responsabilidade",
+     "body": "\n   <p>O vínculo transforma uma relação de fato em relação obrigacional <strong>exigível</strong>. A doutrina o relaciona a dois aspectos:</p>\n   <div class=\"caracteristicas-grid\">\n     <div class=\"carac-card\"><div class=\"carac-num\">SCHULD</div><h4>Débito</h4><p class=\"small muted\">O dever de cumprir a prestação.</p></div>\n     <div class=\"carac-card\"><div class=\"carac-num\">HAFTUNG</div><h4>Responsabilidade</h4><p class=\"small muted\">A sujeição às consequências jurídicas do inadimplemento.</p></div>\n   </div>\n   <p>O objeto imediato da obrigação é a <strong>prestação</strong>: o comportamento que o devedor deve adotar. Ela precisa ser juridicamente <strong>possível, lícita e determinada ou determinável</strong>. Quando a obrigação decorre de negócio jurídico, valem também os requisitos de validade do <strong>art. 104</strong>.</p>\n   <p>Descumprida a obrigação, podem surgir perdas e danos, juros, atualização monetária e honorários.</p>"
+    }
+   ],
+   "casos": [
+    {
+     "t": "Compra e venda: obrigações recíprocas",
+     "resumo": "João compra um imóvel de Maria. Quem é credor e quem é devedor?",
+     "detalhe": "Ambos são, simultaneamente. João é credor da transferência do domínio e devedor do preço; Maria é credora do preço e devedora dos atos de transferência. O art. 481 estrutura o contrato: um se obriga a transferir o domínio de certa coisa, o outro a pagar certo preço em dinheiro. É contrato bilateral e oneroso."
+    },
+    {
+     "t": "Prestação sem valor econômico",
+     "resumo": "Alguém promete a um amigo que irá acompanhá-lo ao cinema no sábado.",
+     "detalhe": "Não há relação obrigacional em sentido técnico: falta patrimonialidade e, sobretudo, o vínculo jurídico de exigibilidade. Trata-se de compromisso social, não juridicamente exigível. O vínculo é justamente o que distingue a obrigação de uma simples promessa informal."
+    }
+   ]
+  },
+  "flash": [
+   {
+    "aula": 1,
+    "f": "Fórmula básica da obrigação",
+    "b": "Credor + devedor + prestação + vínculo jurídico."
+   },
+   {
+    "aula": 1,
+    "f": "Como se chamam credor e devedor em latim?",
+    "b": "Credor: accipiens (sujeito ativo). Devedor: solvens (sujeito passivo)."
+   },
+   {
+    "aula": 1,
+    "f": "O que distingue a relação obrigacional?",
+    "b": "O objeto: a prestação tem conteúdo patrimonial, com expressão econômica direta ou indireta."
+   },
+   {
+    "aula": 1,
+    "f": "Os dois aspectos do vínculo jurídico",
+    "b": "Débito (Schuld): o dever de cumprir. Responsabilidade (Haftung): a sujeição às consequências do inadimplemento."
+   }
+  ],
+  "questions": [
+   {
+    "q": "Quais são os elementos constitutivos da obrigação?",
+    "opts": [
+     "Apenas credor e devedor",
+     "Sujeitos, objeto (prestação) e vínculo jurídico",
+     "Contrato e pagamento",
+     "Dano e culpa"
+    ],
+    "correct": 1,
+    "exp": "A fórmula é: credor + devedor + prestação + vínculo jurídico.",
+    "aula": 1
+   },
+   {
+    "q": "Como também é chamado o credor?",
+    "opts": [
+     "Solvens",
+     "Accipiens",
+     "Tradens",
+     "Reus"
+    ],
+    "correct": 1,
+    "exp": "O sujeito ativo é o credor, ou accipiens. O devedor é o solvens.",
+    "aula": 1
+   }
+  ]
+ }
 };
 
 /* ============ ESTADO ============ */
