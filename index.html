@@ -16,6 +16,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap');
 
@@ -354,6 +355,30 @@ input,textarea{font-family:inherit;} ul{margin:0; padding:0;} li{list-style:none
 .admin-devices{background:var(--bg-raised-2); border-radius:var(--radius-sm); padding:10px 14px;}
 .device-row{display:flex; justify-content:space-between; gap:14px; padding:6px 0; font-size:13.5px; border-bottom:1px solid var(--border);}
 .device-row:last-child{border-bottom:none;}
+
+.landing-wrap{min-height:100vh; background:var(--bg); padding:0 0 60px;}
+.landing-nav{display:flex; align-items:center; justify-content:space-between; max-width:980px; margin:0 auto; padding:26px 24px;}
+.landing-nav .auth-brand{margin-bottom:0;}
+.landing-hero{max-width:980px; margin:0 auto; padding:20px 24px 10px; text-align:center;}
+.landing-hero h1{font-family:var(--font-display); font-size:clamp(28px,5vw,44px); line-height:1.15; margin-bottom:16px;}
+.landing-hero h1 span{color:var(--gold);}
+.landing-hero p{font-size:16px; color:var(--text-muted); max-width:640px; margin:0 auto 28px; line-height:1.6;}
+.landing-cta-row{display:flex; gap:14px; justify-content:center; flex-wrap:wrap; margin-bottom:8px;}
+.landing-price{font-family:var(--font-display); font-size:15px; color:var(--text-muted); margin-top:14px;}
+.landing-price strong{color:var(--gold); font-size:17px;}
+.landing-subjects{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:16px; max-width:980px; margin:48px auto 0; padding:0 24px;}
+.landing-subject-card{background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius); padding:20px; text-align:left;}
+.landing-subject-card h4{font-size:16px; margin-bottom:6px;}
+.landing-subject-card p{font-size:13.5px; color:var(--text-muted); line-height:1.5; margin:0;}
+.landing-features{max-width:980px; margin:52px auto 0; padding:0 24px;}
+.landing-features h2{font-family:var(--font-display); font-size:24px; text-align:center; margin-bottom:28px;}
+.landing-feat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:20px;}
+.landing-feat{display:flex; gap:12px; align-items:flex-start;}
+.landing-feat .icon{width:24px; height:24px; color:var(--gold); flex-shrink:0; margin-top:2px;}
+.landing-feat h5{font-size:14.5px; margin-bottom:4px;}
+.landing-feat p{font-size:13px; color:var(--text-muted); margin:0; line-height:1.5;}
+.landing-final{max-width:640px; margin:56px auto 0; padding:0 24px; text-align:center;}
+.landing-final .btn{width:100%; justify-content:center;}
 </style>
 </head>
 <body>
@@ -439,6 +464,34 @@ const PIX_TIER_LIMIT = 9;   /* quantos pagam o preço promocional */
 const PIX_PRICE_EARLY = 40; /* preço para os PIX_TIER_LIMIT primeiros aprovados */
 const PIX_PRICE_LATER = 50; /* preço para os demais */
 function currentPrice(approvedCount){ return approvedCount < PIX_TIER_LIMIT ? PIX_PRICE_EARLY : PIX_PRICE_LATER; }
+
+/* ============ NOTIFICAÇÃO AUTOMÁTICA DE APROVAÇÃO (EmailJS) ============
+   Quando você aprova alguém em Administração → Aprovações, o site tenta
+   mandar um e-mail avisando que o acesso foi liberado. É opcional: se as
+   três constantes abaixo ficarem em branco, a aprovação funciona
+   normalmente, só que sem notificação nenhuma.
+   1) Crie uma conta grátis em https://www.emailjs.com (plano free cobre
+      200 e-mails/mês, de sobra pra uma turma)
+   2) Em Email Services, conecte um serviço de e-mail (ex.: Gmail) e copie
+      o Service ID gerado
+   3) Em Email Templates, crie um template usando as variáveis
+      {{to_email}} e {{site_url}} no corpo, e copie o Template ID
+   4) Em Account → General, copie a Public Key
+   5) Preencha as três constantes abaixo e dê git push — não precisa
+      mexer em mais nada */
+const EMAILJS_PUBLIC_KEY = '';
+const EMAILJS_SERVICE_ID = '';
+const EMAILJS_TEMPLATE_ID = '';
+function notifyConfigured(){ return !!(EMAILJS_PUBLIC_KEY && EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID); }
+async function notifyApproved(email){
+  if(!notifyConfigured() || typeof emailjs==='undefined') return;
+  try{
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: email,
+      site_url: location.href.split('#')[0].split('?')[0]
+    }, { publicKey: EMAILJS_PUBLIC_KEY });
+  }catch(e){ console.warn('Não foi possível enviar a notificação de aprovação por e-mail.', e); }
+}
 
 function crc16Pix(str){
   let crc = 0xFFFF;
@@ -563,6 +616,7 @@ async function loadAllContent(){
 function showAuthRoot(html){
   document.getElementById('app-root').style.display='none';
   authRoot().style.display='';
+  authRoot().className = 'auth-wrap';
   authRoot().innerHTML = html;
 }
 
@@ -572,6 +626,51 @@ function renderSetupNeeded(){
     <h2>Login ainda não configurado</h2>
     <p class="auth-sub">Este site está pronto para exigir e-mail e senha, mas falta preencher <code>firebaseConfig</code> e <code>ADMIN_EMAIL</code> no início do &lt;script&gt;, com os dados de um projeto Firebase (gratuito).</p>
   </div>`);
+}
+
+function renderLanding(){
+  const price = PIX_PRICE_EARLY;
+  document.getElementById('app-root').style.display='none';
+  authRoot().style.display='';
+  authRoot().className = 'landing-wrap';
+  authRoot().innerHTML = `
+    <div class="landing-nav">
+      <div class="auth-brand">${ic('scale')}<span>Curso·Jurídico</span></div>
+      <button class="btn btn-ghost btn-sm" id="landing-to-login">Já sou aluno</button>
+    </div>
+    <div class="landing-hero">
+      <h1>Estude Direito com <span>menos aula e mais aprovação</span></h1>
+      <p>Resumos, simulados, flashcards, mapa mental e certificado — tudo num só lugar, organizado por matéria, pra você não perder mais tempo garimpando PDF solto e resumo de grupo do WhatsApp.</p>
+      <div class="landing-cta-row">
+        <button class="btn btn-primary" id="landing-to-signup">Criar minha conta</button>
+        <button class="btn btn-ghost" id="landing-to-login-2">Já tenho conta</button>
+      </div>
+      <p class="landing-price">A partir de <strong>R$ ${price},00</strong> · acesso ao semestre inteiro, pagamento único</p>
+    </div>
+    <div class="landing-subjects">
+      <div class="landing-subject-card"><h4>Direito do Trabalho</h4><p>Da CLT às súmulas mais cobradas, direto ao ponto.</p></div>
+      <div class="landing-subject-card"><h4>Processo Civil</h4><p>Do processo de conhecimento a recursos, com guias completos.</p></div>
+      <div class="landing-subject-card"><h4>Obrigações</h4><p>Teoria geral sem enrolação, com exemplos práticos.</p></div>
+      <div class="landing-subject-card"><h4>Direito Penal</h4><p>Parte geral e os pontos que mais caem em prova.</p></div>
+    </div>
+    <div class="landing-features">
+      <h2>O que vem incluso</h2>
+      <div class="landing-feat-grid">
+        <div class="landing-feat">${ic('quiz')}<div><h5>Simulados por nível</h5><p>Questões fácil, médio e difícil, com correção na hora.</p></div></div>
+        <div class="landing-feat">${ic('cards')}<div><h5>Flashcards</h5><p>Revisão rápida dos pontos-chave de cada matéria.</p></div></div>
+        <div class="landing-feat">${ic('map')}<div><h5>Mapa mental</h5><p>Visão geral de cada matéria de forma visual.</p></div></div>
+        <div class="landing-feat">${ic('chart')}<div><h5>Progresso salvo</h5><p>Marque o que já estudou e favorite o que precisa revisar.</p></div></div>
+        <div class="landing-feat">${ic('cert')}<div><h5>Certificado em PDF</h5><p>Ao concluir uma matéria, gere seu certificado.</p></div></div>
+        <div class="landing-feat">${ic('scale')}<div><h5>Acesso pelo semestre</h5><p>Um pagamento único vale até o fim do semestre.</p></div></div>
+      </div>
+    </div>
+    <div class="landing-final">
+      <button class="btn btn-primary" id="landing-to-signup-2">Quero acesso</button>
+    </div>`;
+  document.getElementById('landing-to-signup').addEventListener('click', ()=>renderAuthSignup());
+  document.getElementById('landing-to-signup-2').addEventListener('click', ()=>renderAuthSignup());
+  document.getElementById('landing-to-login').addEventListener('click', ()=>renderAuthLogin());
+  document.getElementById('landing-to-login-2').addEventListener('click', ()=>renderAuthLogin());
 }
 
 function renderAuthLogin(err=''){
@@ -587,6 +686,7 @@ function renderAuthLogin(err=''){
       <button class="btn btn-primary" type="submit">Entrar</button>
     </form>
     <p class="auth-switch">Ainda não tem conta? <button id="to-signup">Criar conta</button></p>
+    <p class="auth-switch"><button id="to-landing">&larr; Voltar</button></p>
   </div>`);
   document.getElementById('login-form').addEventListener('submit', e=>{
     e.preventDefault();
@@ -594,6 +694,7 @@ function renderAuthLogin(err=''){
     auth.signInWithEmailAndPassword(email, pass).catch(er=>renderAuthLogin(authErrMsg(er)));
   });
   document.getElementById('to-signup').addEventListener('click', ()=>renderAuthSignup());
+  document.getElementById('to-landing').addEventListener('click', ()=>renderLanding());
   document.getElementById('btn-forgot').addEventListener('click', ()=>{
     const email=document.getElementById('auth-email').value.trim();
     if(!email){ renderAuthLogin('Digite seu e-mail no campo acima e clique em "Esqueci minha senha" de novo.'); return; }
@@ -617,6 +718,7 @@ function renderAuthSignup(err=''){
       <button class="btn btn-primary" type="submit">Criar conta</button>
     </form>
     <p class="auth-switch">Já tem conta? <button id="to-login">Entrar</button></p>
+    <p class="auth-switch"><button id="to-landing">&larr; Voltar</button></p>
   </div>`);
   document.getElementById('signup-form').addEventListener('submit', e=>{
     e.preventDefault();
@@ -630,6 +732,7 @@ function renderAuthSignup(err=''){
     }).catch(er=>renderAuthSignup(authErrMsg(er)));
   });
   document.getElementById('to-login').addEventListener('click', ()=>renderAuthLogin());
+  document.getElementById('to-landing').addEventListener('click', ()=>renderLanding());
 }
 
 function renderSemesterEnded(){
@@ -683,7 +786,7 @@ function initFirebaseAuth(){
   auth = firebase.auth();
   db = firebase.firestore();
   auth.onAuthStateChanged(async user=>{
-    if(!user){ appInitialized=false; isAdmin=false; cleanupSession(); renderAuthLogin(); return; }
+    if(!user){ appInitialized=false; isAdmin=false; cleanupSession(); renderLanding(); return; }
     if(user.email===ADMIN_EMAIL){ isAdmin=true; if(!mySessionId) registerSession(user.uid); showApp(); return; }
     try{
       const doc = await db.collection('users').doc(user.uid).get();
@@ -1193,7 +1296,7 @@ async function pageAprovacoes(){
       <h3 style="margin-top:8px">Pendentes (${pending.length})</h3>
       <div class="admin-list">${pending.length?pending.map(u=>`
         <div class="admin-row"><span>${escAttr(u.email)}</span>
-          <button class="btn btn-primary btn-sm" data-approve="${u.id}">Aprovar</button></div>`).join(''):'<p class="admin-empty">Ninguém aguardando aprovação.</p>'}</div>
+          <button class="btn btn-primary btn-sm" data-approve="${u.id}" data-email="${escAttr(u.email)}">Aprovar</button></div>`).join(''):'<p class="admin-empty">Ninguém aguardando aprovação.</p>'}</div>
       <h3 style="margin-top:30px">Com acesso liberado (${approved.length})</h3>
       <p class="small muted" style="margin:-4px 0 12px">Limite de ${MAX_SESSIONS} dispositivos simultâneos por conta — o mais antigo é desconectado automaticamente ao logar num a mais.</p>
       <div class="admin-list">${approved.length?approved.map(u=>`
@@ -1209,6 +1312,7 @@ async function pageAprovacoes(){
       b.disabled=true;
       await db.collection('users').doc(b.dataset.approve).update({approved:true});
       await db.collection('meta').doc('pricing').set({approvedCount: firebase.firestore.FieldValue.increment(1)}, {merge:true});
+      notifyApproved(b.dataset.email);
       pageAprovacoes();
     }));
     box.querySelectorAll('[data-revoke]').forEach(b=>b.addEventListener('click',async()=>{

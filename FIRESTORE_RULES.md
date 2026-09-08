@@ -163,6 +163,48 @@ próximo semestre, edite a data em dois lugares: a constante
 `SEMESTER_END` no `index.html`, e a data (`timestamp.date(2026,12,14)`)
 na regra do `content` no Firestore.
 
+## Página de vendas
+
+Quem não está logado agora vê primeiro uma página de vendas (apresentando
+as 4 matérias, os recursos do site e o preço) em vez de cair direto na
+tela de login. Os botões "Já sou aluno" / "Criar minha conta" levam pras
+telas de sempre. Não precisa configurar nada — já funciona.
+
+## Notificação automática de aprovação (opcional)
+
+Quando você aprova alguém em **Administração → Aprovações**, o site tenta
+mandar um e-mail avisando que o acesso foi liberado, usando o
+[EmailJS](https://www.emailjs.com) (envio direto do navegador, sem
+precisar de backend — plano grátis cobre 200 e-mails/mês). Isso é
+opcional: enquanto as constantes abaixo estiverem em branco, a aprovação
+continua funcionando normalmente, só que sem mandar e-mail nenhum.
+
+Pra ativar:
+
+1. Crie uma conta grátis em https://www.emailjs.com.
+2. Em **Email Services**, conecte um serviço de e-mail (ex.: Gmail) e
+   copie o **Service ID** gerado.
+3. Em **Email Templates**, crie um template usando as variáveis
+   `{{to_email}}` e `{{site_url}}` no corpo (ex.: "Seu acesso ao
+   Curso·Jurídico foi aprovado! Entre em {{site_url}}"), e copie o
+   **Template ID**.
+4. Em **Account → General**, copie a **Public Key**.
+5. No `index.html`, procure por `EMAILJS_PUBLIC_KEY` (perto do bloco do
+   Pix) e preencha as três constantes:
+
+```js
+const EMAILJS_PUBLIC_KEY = '';
+const EMAILJS_SERVICE_ID = '';
+const EMAILJS_TEMPLATE_ID = '';
+```
+
+6. `git push`. Não precisa mexer em mais nada — nem no Firestore, nem nas
+   regras de segurança.
+
+Se o envio falhar por qualquer motivo (ex.: cota do plano grátis
+esgotada), a aprovação em si não é afetada — só o e-mail não sai, e o
+erro fica só no console do navegador.
+
 ## Limitação importante
 
 O material das aulas (aulas, questões, flashcards, mapa mental) fica no
