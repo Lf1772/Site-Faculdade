@@ -348,8 +348,9 @@ input,textarea{font-family:inherit;} ul{margin:0; padding:0;} li{list-style:none
 .pix-qr{display:flex; align-items:center; justify-content:center; min-height:120px; padding:16px; background:#fff; border-radius:var(--radius-sm); margin-bottom:16px;}
 .pix-qr p{color:#555; text-align:center;}
 .pix-qr img, .pix-qr canvas, .pix-qr table{display:block;}
-.pix-copy-row{display:flex; gap:8px;}
-.pix-copy-row input{flex:1; min-width:0; padding:10px 12px; border-radius:var(--radius-sm); border:1.5px solid var(--border-strong); background:var(--bg-raised-2); color:var(--text-muted); font-size:12px; font-family:monospace;}
+.pix-key-row{display:flex; align-items:center; gap:10px; background:var(--bg-raised-2); border:1.5px solid var(--border-strong); border-radius:var(--radius-sm); padding:12px 16px; flex-wrap:wrap;}
+.pix-key-label{font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; width:100%;}
+.pix-key-value{font-family:monospace; font-size:17px; color:var(--text); flex:1; min-width:0;}
 .pix-note{text-align:left; margin-top:18px;}
 .pix-note a{color:var(--gold);}
 .admin-list{display:flex; flex-direction:column; gap:10px; margin-top:18px;}
@@ -470,6 +471,7 @@ const PIX_KEY = '15877661752';
 const PIX_NAME = 'Luiz Felipe Mattos';
 const PIX_CITY = 'Rio de Janeiro';
 const WHATSAPP_NUMBER = '5521990672525'; /* com código do país (55) e DDD, só dígitos */
+function formatCPF(digits){ return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'); }
 
 /* ============ FIM DO SEMESTRE ============ */
 /* Acesso de quem não é admin vale até o fim de 13/12/2026 (horário de Brasília).
@@ -852,10 +854,11 @@ async function renderAuthPending(email){
     <h2>Falta um passo: o pagamento</h2>
     <p class="auth-sub">Sua conta (${escAttr(email)}) foi criada. Pague via Pix abaixo e envie o comprovante — assim que aprovarmos, seu acesso libera.</p>
     <div class="pix-price">R$ ${price},00<span class="small muted"> — acesso ao semestre inteiro</span></div>
-    <div class="pix-qr" id="pix-qr"><p class="small muted" style="margin:0">QR indisponível no momento — use o código abaixo.</p></div>
-    <div class="pix-copy-row">
-      <input readonly id="pix-code" value="${escAttr(payload)}">
-      <button class="btn btn-ghost btn-sm" id="btn-copy-pix">Copiar código</button>
+    <div class="pix-qr" id="pix-qr"><p class="small muted" style="margin:0">QR indisponível no momento — use a chave abaixo.</p></div>
+    <div class="pix-key-row">
+      <div class="pix-key-label">Chave Pix (CPF)</div>
+      <div class="pix-key-value">${formatCPF(PIX_KEY)}</div>
+      <button class="btn btn-ghost btn-sm" id="btn-copy-pix">Copiar chave</button>
     </div>
     <div class="callout pix-note"><strong>Depois de pagar:</strong> envie o comprovante pelo WhatsApp <a href="${whatsappLink()}" target="_blank" rel="noopener">(21) 99067-2525</a>. A aprovação é manual, então pode levar um tempinho.</div>
     <p class="auth-switch">Enquanto isso, <button id="btn-preview-pending">veja uma prévia grátis</button> do conteúdo.</p>
@@ -865,9 +868,13 @@ async function renderAuthPending(email){
     new QRCode(document.getElementById('pix-qr'), {text: payload, width:200, height:200, colorDark:'#000000', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M});
   }
   document.getElementById('btn-copy-pix').addEventListener('click', async ()=>{
-    const btn = document.getElementById('btn-copy-pix'), input = document.getElementById('pix-code');
-    try{ await navigator.clipboard.writeText(payload); }
-    catch(e){ input.select(); document.execCommand('copy'); }
+    const btn = document.getElementById('btn-copy-pix');
+    try{ await navigator.clipboard.writeText(PIX_KEY); }
+    catch(e){
+      const tmp = document.createElement('input');
+      tmp.value = PIX_KEY; document.body.appendChild(tmp);
+      tmp.select(); document.execCommand('copy'); tmp.remove();
+    }
     const original = btn.textContent; btn.textContent = 'Copiado!';
     setTimeout(()=>{ btn.textContent = original; }, 2000);
   });
