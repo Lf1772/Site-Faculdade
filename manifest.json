@@ -1,0 +1,16 @@
+{
+  "name": "Curso·Jurídico",
+  "short_name": "Curso·Jurídico",
+  "description": "Guia de estudos interativo de Direito: Trabalho, Processo Civil, Obrigações e Proteção Penal, com resumos, simulados, flashcards, mapa mental e certificado em PDF.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f0d0a",
+  "theme_color": "#0f0d0a",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
