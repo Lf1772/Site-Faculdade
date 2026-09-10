@@ -566,6 +566,7 @@ function summarizeDevice(){
 function cleanupSession(){
   if(sessionHeartbeat){ clearInterval(sessionHeartbeat); sessionHeartbeat=null; }
   if(sessionUnsub){ sessionUnsub(); sessionUnsub=null; }
+  if(cloudSyncTimer){ clearTimeout(cloudSyncTimer); cloudSyncTimer=null; }
   mySessionId=null;
 }
 async function enforceSessionLimit(uid){
@@ -613,6 +614,7 @@ async function showApp(){
     </div>`);
     try{
       await loadAllContent();
+      await loadCloudProgress();
       contentLoaded=true;
     }catch(e){
       showAuthRoot(`<div class="auth-card">
@@ -1374,8 +1376,9 @@ const state = {
         penal:{level:null,i:0,answers:[],finished:false,history:[]}},
   flashFilter:'todas', certName:'', scrollY:0
 };
-/* ============ PERSISTÊNCIA (localStorage) ============ */
+/* ============ PERSISTÊNCIA (localStorage + Firestore) ============ */
 const STORAGE_KEY = 'curso-juridico-v1';
+let cloudSyncTimer = null;
 function persist(){
   try{
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -1384,6 +1387,8 @@ function persist(){
       route:state.route, scrollY:state.scrollY
     }));
   }catch(e){ /* localStorage indisponível (modo privado, quota excedida etc.) */ }
+  if(cloudSyncTimer) clearTimeout(cloudSyncTimer);
+  cloudSyncTimer = setTimeout(pushCloudProgress, 1500);
 }
 let isResetting = false;
 function saveScrollAndPersist(){ if(isResetting) return; state.scrollY = window.scrollY; persist(); }
@@ -1395,10 +1400,37 @@ function loadPersisted(){
     Object.assign(state, saved);
   }catch(e){ /* dado salvo corrompido — mantém o estado padrão */ }
 }
+function progressDocRef(){
+  return db.collection('users').doc(auth.currentUser.uid).collection('progress').doc('state');
+}
+function progressSnapshot(){
+  return { done:state.done, favs:state.favs, quiz:state.quiz, flashFilter:state.flashFilter, certName:state.certName };
+}
+async function pushCloudProgress(){
+  if(!auth || !auth.currentUser) return;
+  try{ await progressDocRef().set(progressSnapshot(), {merge:true}); }catch(e){ /* offline ou sem permissão — o localStorage já guardou o progresso */ }
+}
+async function loadCloudProgress(){
+  if(!auth || !auth.currentUser) return;
+  try{
+    const snap = await progressDocRef().get();
+    if(snap.exists){
+      const cloud = snap.data();
+      if(cloud.done) state.done = cloud.done;
+      if(cloud.favs) state.favs = cloud.favs;
+      if(cloud.quiz) state.quiz = cloud.quiz;
+      if(typeof cloud.flashFilter === 'string') state.flashFilter = cloud.flashFilter;
+      if(typeof cloud.certName === 'string') state.certName = cloud.certName;
+    }else{
+      await pushCloudProgress();
+    }
+  }catch(e){ /* sem internet ou erro — segue só com o progresso deste navegador */ }
+}
 function resetProgress(){
-  if(!confirm('Isso vai apagar todo o progresso, favoritos, respostas de simulado e o nome do certificado salvos neste navegador. Continuar?')) return;
+  if(!confirm('Isso vai apagar todo o progresso, favoritos, respostas de simulado e o nome do certificado salvos na sua conta. Continuar?')) return;
   isResetting = true;
   try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  if(auth && auth.currentUser){ progressDocRef().delete().catch(()=>{}); }
   location.reload();
 }
 

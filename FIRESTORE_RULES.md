@@ -45,6 +45,9 @@ service cloud.firestore {
         (request.auth.uid == userId || request.auth.token.email == "SEU_EMAIL_ADMIN");
       allow write: if request.auth != null && request.auth.uid == userId;
     }
+    match /users/{userId}/progress/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
     match /meta/{docId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.token.email == "SEU_EMAIL_ADMIN";
@@ -72,6 +75,10 @@ navegador — ninguém consegue burlar editando o código do site):
 - Cada conta gerencia livremente sua própria subcoleção `sessions` (usada
   para o controle de dispositivos simultâneos); só o e-mail admin consegue
   ler a de outras contas, para o painel de Aprovações.
+- Cada conta gerencia livremente sua própria subcoleção `progress` (aulas
+  marcadas como lidas, favoritos, respostas de simulado e nome do
+  certificado) — ninguém além do dono da conta consegue ler ou escrever
+  ali, nem o e-mail admin.
 - Qualquer pessoa logada (mesmo pendente de aprovação) pode ler `meta/pricing`
   — é o contador usado para mostrar o preço promocional/normal do Pix na tela
   de pagamento — mas só o e-mail admin pode alterá-lo (isso acontece
@@ -169,6 +176,18 @@ Quem não está logado agora vê primeiro uma página de vendas (apresentando
 as 4 matérias, os recursos do site e o preço) em vez de cair direto na
 tela de login. Os botões "Já sou aluno" / "Criar minha conta" levam pras
 telas de sempre. Não precisa configurar nada — já funciona.
+
+## Progresso salvo na conta
+
+Aulas marcadas como lidas, favoritos, respostas de simulado e o nome usado
+no certificado agora ficam salvos também na conta do aluno (Firestore),
+não só no navegador. Isso significa que, se a pessoa trocar de celular ou
+limpar os dados do navegador, o progresso não se perde — ele é
+recarregado automaticamente ao entrar de novo.
+
+Não precisa configurar nada além de colar as regras acima. O botão
+"Limpar progresso salvo" (no rodapé do site) agora apaga tanto a cópia
+local quanto a da conta.
 
 ## Notificação automática de aprovação (opcional)
 
