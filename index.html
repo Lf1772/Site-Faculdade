@@ -700,8 +700,11 @@ function renderLanding(){
 }
 
 let previewSubject = 'trabalho';
+let previewQuestions = {};
 function renderPreview(backFn){
   const p = PREVIEW[previewSubject];
+  if(!previewQuestions[previewSubject]) previewQuestions[previewSubject] = p.questions.map(shuffleOptions);
+  const qs = previewQuestions[previewSubject];
   document.getElementById('app-root').style.display='none';
   authRoot().style.display='';
   authRoot().className = 'preview-wrap';
@@ -731,10 +734,10 @@ function renderPreview(backFn){
             <div class="flash-face flash-back"><div>${c.b}</div></div></div></div>`).join('')}</div>
           <p class="preview-flash-note">Clique num card pra virar e ver a resposta.</p>
         </section>`:''}
-      ${p.questions.length?`
+      ${qs.length?`
         <section class="lesson-section reveal">
           <div class="section-head"><h2>Questões de exemplo</h2></div>
-          ${p.questions.map((q,i)=>`
+          ${qs.map((q,i)=>`
             <div class="preview-quiz-item">
               <h3 class="quiz-question" style="font-size:17px">${q.q}</h3>
               <div class="quiz-options" data-preview-quiz="${i}">
@@ -757,7 +760,7 @@ function renderPreview(backFn){
   document.querySelectorAll('.flashcard').forEach(el=>el.addEventListener('click', ()=>el.classList.toggle('flipped')));
   document.querySelectorAll('[data-preview-quiz]').forEach(group=>{
     const qi = group.dataset.previewQuiz;
-    const item = PREVIEW[previewSubject].questions[qi];
+    const item = previewQuestions[previewSubject][qi];
     group.querySelectorAll('[data-opt]').forEach(btn=>btn.addEventListener('click', ()=>{
       const chosen = Number(btn.dataset.opt);
       group.querySelectorAll('[data-opt]').forEach((b,j)=>{
@@ -1624,12 +1627,16 @@ function quizIntro(){
   </div>`;
   main().querySelectorAll('[data-level]').forEach(b=>b.addEventListener('click',()=>{
     const lv=b.dataset.level;
-    state.quiz[state.subject]={level:lv,i:0,answers:[],finished:false,history:q.history,list: lv==='discursivas'?null:shuffle([...sub.questions[lv]])};
+    state.quiz[state.subject]={level:lv,i:0,answers:[],finished:false,history:q.history,list: lv==='discursivas'?null:shuffle([...sub.questions[lv]]).map(shuffleOptions)};
     pageQuiz();
   }));
   postRender();
 }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+function shuffleOptions(item){
+  const order = shuffle(item.opts.map((_,i)=>i));
+  return { ...item, opts: order.map(i=>item.opts[i]), correct: order.indexOf(item.correct) };
+}
 function quizActive(){
   const q=Q(), item=q.list[q.i], answered=q.answers[q.i]!==undefined;
   const badge={facil:'badge-facil',medio:'badge-medio',dificil:'badge-dificil'}[q.level];
@@ -1669,7 +1676,7 @@ function quizResult(){
       <button class="btn btn-ghost" data-go="dashboard">Ver progresso</button>
     </div></div>`;
   document.getElementById('retry').addEventListener('click',()=>{
-    state.quiz[state.subject]={level:q.level,i:0,answers:[],finished:false,history:q.history,list:shuffle([...S().questions[q.level]])}; pageQuiz(); });
+    state.quiz[state.subject]={level:q.level,i:0,answers:[],finished:false,history:q.history,list:shuffle([...S().questions[q.level]]).map(shuffleOptions)}; pageQuiz(); });
   postRender();
 }
 function quizDisc(){
