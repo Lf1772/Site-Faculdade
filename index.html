@@ -212,8 +212,13 @@ input,textarea{font-family:inherit;} ul{margin:0; padding:0;} li{list-style:none
 .toc-link:hover{color:var(--gold); border-color:var(--gold);}
 .toc-progress{margin-top:16px; padding-left:12px;}
 .lesson-body{flex:1; min-width:0; max-width:760px;}
-.lesson-section{padding:36px 0; border-top:1px solid var(--border);}
+.lesson-section{padding:36px 0; border-top:1px solid var(--border); border-radius:var(--radius-sm); transition:background .3s ease;}
 .lesson-section:first-of-type{border-top:none; padding-top:8px;}
+.section-flash{animation:section-flash-anim 2.2s ease-out;}
+@keyframes section-flash-anim{
+  0%{background:var(--gold-soft); box-shadow:0 0 0 1px var(--gold) inset;}
+  100%{background:transparent; box-shadow:0 0 0 0 transparent inset;}
+}
 .section-head{display:flex; justify-content:space-between; align-items:flex-start; gap:14px; margin-bottom:14px;}
 .fav-btn.is-fav .icon{color:var(--gold);}
 .done-toggle{position:relative; display:flex; align-items:center; gap:6px; cursor:pointer; font-size:13px; color:var(--text-muted);}
@@ -288,18 +293,26 @@ input,textarea{font-family:inherit;} ul{margin:0; padding:0;} li{list-style:none
 
 .mindmap-wrap{position:relative; margin-top:22px;}
 .mindmap-controls{position:absolute; top:14px; right:14px; z-index:5; display:flex; flex-direction:column; gap:6px; background:var(--bg-raised); border:1px solid var(--border); border-radius:var(--radius-sm); padding:4px;}
-.mindmap-viewport{width:100%; height:560px; overflow:hidden; border-radius:var(--radius); border:1px solid var(--border); background:var(--bg-raised); cursor:grab; touch-action:none;}
+.mindmap-viewport{width:100%; height:560px; overflow:hidden; border-radius:var(--radius); border:1px solid var(--border);
+  background:radial-gradient(ellipse at center, var(--bg-raised) 0%, var(--bg) 100%); cursor:grab; touch-action:none;}
 .mindmap-viewport.dragging{cursor:grabbing;}
 #mm-svg{width:100%; height:100%; display:block;}
-.mm-edge{stroke:var(--border-strong); stroke-width:1.4; fill:none;}
-.mm-node .mm-hit{fill:transparent;}
-.mm-node .mm-dot{fill:var(--bg-raised-2); stroke:var(--gold); stroke-width:1.6; transition:fill .15s ease;}
-.mm-node:hover .mm-dot{fill:var(--gold-soft);}
+.mm-edge{stroke:currentColor; stroke-width:2; fill:none; opacity:.45; transition:opacity .2s ease;}
+.mm-node{color:var(--gold); transition:opacity .2s ease;}
+.mm-node.is-dimmed{opacity:.35;}
+.mm-node .mm-hit{fill:transparent; cursor:pointer;}
+.mm-node .mm-dot{fill:var(--bg-raised-2); stroke:currentColor; stroke-width:2; filter:drop-shadow(0 2px 6px rgba(0,0,0,.18)); transition:fill .15s ease, transform .15s ease; transform-origin:center; transform-box:fill-box;}
+.mm-node:hover .mm-dot{fill:currentColor; fill-opacity:.16; transform:scale(1.04);}
 .mm-node text{fill:var(--text); dominant-baseline:middle; font-family:var(--font-body); font-size:13px; font-weight:600; pointer-events:none;}
-.mm-node.lvl-0 .mm-dot{fill:var(--gold); stroke:var(--gold);}
+.mm-node.lvl-0{color:var(--gold);}
+.mm-node.lvl-0 .mm-dot{fill:currentColor; stroke:currentColor; filter:drop-shadow(0 0 14px var(--gold-soft));}
 .mm-node.lvl-0 text{fill:#0f0d0a; font-size:15px; font-family:var(--font-display);}
-.mm-node.lvl-2 .mm-dot{stroke:var(--accent);} .mm-node.lvl-2 text{font-size:11px; font-weight:500;}
-.mm-node[data-goto]{cursor:pointer;}
+.mm-node.lvl-2 .mm-dot{stroke-width:1.6;} .mm-node.lvl-2 text{font-size:11px; font-weight:500;}
+.mm-node[data-goto] .mm-hit{cursor:pointer;}
+.mm-toggle{cursor:pointer;}
+.mm-toggle circle{fill:var(--bg-raised); stroke:currentColor; stroke-width:1.6;}
+.mm-toggle:hover circle{fill:currentColor; fill-opacity:.18;}
+.mm-toggle path{stroke:currentColor; stroke-width:1.8; stroke-linecap:round;}
 @media (max-width:640px){ .mindmap-viewport{height:420px;} }
 
 .fav-list{display:flex; flex-direction:column; gap:10px; margin-top:24px;}
@@ -1523,7 +1536,7 @@ function switchSubject(key){
   state.subject = key; state.flashFilter='todas';
   refreshSubjectUI(); go('home');
 }
-function markActive(){ document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.go===state.route)); }
+function markActive(){ const base=state.route.split('#')[0]; document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.go===base)); }
 const main = () => document.getElementById('main');
 
 /* ============ PÁGINAS ============ */
@@ -1566,7 +1579,7 @@ function pageHome(){
   </section>`;
   postRender();
 }
-function pageLesson(id){
+function pageLesson(id, sectionId){
   const L = S().lessons, l = L.find(x=>x.id===id); if(!l) return pageHome();
   const idx = L.indexOf(l);
   main().innerHTML = `
@@ -1610,6 +1623,16 @@ function pageLesson(id){
     </div>
   </div>`;
   postRender();
+  if(sectionId){
+    const target=document.getElementById('sec-'+sectionId);
+    if(target){
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        target.scrollIntoView({behavior:'smooth',block:'start'});
+        target.classList.add('section-flash');
+        target.addEventListener('animationend', ()=>target.classList.remove('section-flash'), {once:true});
+      }));
+    }
+  }
 }
 function pageQuiz(){ const q=Q(); if(q.level===null) return quizIntro(); if(q.level==='discursivas') return quizDisc(); if(q.finished) return quizResult(); return quizActive(); }
 function quizIntro(){
@@ -1760,10 +1783,11 @@ function drawCharts(){
     datasets:[{data:Q().history.map(x=>Math.round(x.score/x.total*100)),borderColor:gold,backgroundColor:'rgba(150,150,150,.12)',fill:true,tension:.3,pointRadius:4}]},
     options:{plugins:{legend:{display:false}},scales:{y:{max:100,ticks:{color:muted},grid:{color:border}},x:{ticks:{color:muted},grid:{display:false}}}}}));
 }
+const MM_PALETTE = ['#c9a574','#7fa8c9','#8fbf9f','#c98a8a','#b39ddb','#e0a458','#6fbf9f','#d98cb3'];
 function pageMapa(){
   main().innerHTML = `
   <div class="eyebrow">${S().nome}</div><h1>Mapa mental</h1>
-  <p class="hero-sub small">Arraste para navegar. Use os botões, a roda do mouse ou dois dedos (pinça) para dar zoom. Clique no nome de uma aula para abri-la.</p>
+  <p class="hero-sub small">Arraste para navegar. Use os botões, a roda do mouse ou dois dedos (pinça) para dar zoom. Clique no círculo com − pra recolher um ramo. Clique num tópico para abrir a parte correspondente da aula.</p>
   <div class="mindmap-wrap">
     <div class="mindmap-controls"><button class="icon-btn" id="mm-in">+</button><button class="icon-btn" id="mm-out">−</button>
     <button class="icon-btn" id="mm-reset" title="Centralizar">${ic('frame')}</button></div>
@@ -1771,37 +1795,55 @@ function pageMapa(){
   buildMindmap(); postRender();
 }
 function buildMindmap(){
-  const MM=S().mindmap, g=document.getElementById('mm-g');
-  const nodes=[],edges=[]; const cx=520, cy=430;
-  nodes.push({x:cx,y:cy,label:MM.label,lvl:0});
-  const br=MM.children.length;
-  MM.children.forEach((b,i)=>{
-    const ang=(-Math.PI/2)+(i/br)*Math.PI*2;
-    const bx=cx+Math.cos(ang)*255, by=cy+Math.sin(ang)*215;
-    nodes.push({x:bx,y:by,label:b.label,lvl:1,goto:b.goto});
-    edges.push({x1:cx,y1:cy,x2:bx,y2:by});
-    const n=b.children.length;
-    b.children.forEach((c,j)=>{
-      const sp=Math.PI*0.78;
-      const a2=ang-sp/2+(n===1?sp/2:(j/(n-1))*sp);
-      const px=bx+Math.cos(a2)*195, py=by+Math.sin(a2)*145;
-      nodes.push({x:px,y:py,label:c.label,lvl:2});
-      edges.push({x1:bx,y1:by,x2:px,y2:py});
-    });
-  });
-  let html='';
-  edges.forEach(e=>{ html+=`<path class="mm-edge" d="M${e.x1} ${e.y1} C ${(e.x1+e.x2)/2} ${e.y1}, ${(e.x1+e.x2)/2} ${e.y2}, ${e.x2} ${e.y2}"/>`; });
-  nodes.forEach(n=>{
-    const w=n.label.length*(n.lvl===0?9:n.lvl===1?7.2:6)+26;
-    html+=`<g class="mm-node lvl-${n.lvl}" ${n.goto?`data-goto="${n.goto}"`:''} transform="translate(${n.x},${n.y})">
-      <rect class="mm-dot" x="${-w/2}" y="-16" width="${w}" height="32" rx="16"/>
-      <text text-anchor="middle">${n.label}</text><rect class="mm-hit" x="${-w/2}" y="-16" width="${w}" height="32"/></g>`;
-  });
-  g.innerHTML=html;
-  const svg=document.getElementById('mm-svg'); const VB0={x:0,y:0,w:1040,h:860}; let vb={...VB0};
+  const MM=S().mindmap, g=document.getElementById('mm-g'), svg=document.getElementById('mm-svg'), vp=document.getElementById('mm-vp');
+  const collapsed=new Set();
+  const VB0={x:0,y:0,w:1040,h:860}; let vb={...VB0};
   const MIN_W=240, MAX_W=2600;
-  const apply=()=>svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`); apply();
-  const vp=document.getElementById('mm-vp');
+  const apply=()=>svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+
+  function render(){
+    const nodes=[],edges=[]; const cx=520, cy=430;
+    nodes.push({x:cx,y:cy,label:MM.label,lvl:0});
+    const br=MM.children.length;
+    MM.children.forEach((b,i)=>{
+      const ang=(-Math.PI/2)+(i/br)*Math.PI*2;
+      const bx=cx+Math.cos(ang)*255, by=cy+Math.sin(ang)*215;
+      const color=MM_PALETTE[i%MM_PALETTE.length], isCollapsed=collapsed.has(i);
+      nodes.push({x:bx,y:by,label:b.label,lvl:1,goto:b.goto,color,branchIdx:i,hasChildren:b.children.length>0,collapsed:isCollapsed});
+      edges.push({x1:cx,y1:cy,x2:bx,y2:by,color});
+      if(!isCollapsed){
+        const n=b.children.length;
+        b.children.forEach((c,j)=>{
+          const sp=Math.PI*0.78;
+          const a2=ang-sp/2+(n===1?sp/2:(j/(n-1))*sp);
+          const px=bx+Math.cos(a2)*195, py=by+Math.sin(a2)*145;
+          nodes.push({x:px,y:py,label:c.label,lvl:2,goto:c.goto,color});
+          edges.push({x1:bx,y1:by,x2:px,y2:py,color});
+        });
+      }
+    });
+    let html='';
+    edges.forEach(e=>{ html+=`<path class="mm-edge" style="color:${e.color}" d="M${e.x1} ${e.y1} C ${(e.x1+e.x2)/2} ${e.y1}, ${(e.x1+e.x2)/2} ${e.y2}, ${e.x2} ${e.y2}"/>`; });
+    nodes.forEach(n=>{
+      const w=n.label.length*(n.lvl===0?9:n.lvl===1?7.2:6)+26;
+      html+=`<g class="mm-node lvl-${n.lvl}" ${n.goto?`data-goto="${n.goto}"`:''} ${n.color?`style="color:${n.color}"`:''} transform="translate(${n.x},${n.y})">
+        <rect class="mm-dot" x="${-w/2}" y="-16" width="${w}" height="32" rx="16"/>
+        <text text-anchor="middle">${n.label}</text><rect class="mm-hit" x="${-w/2}" y="-16" width="${w}" height="32"/>
+        ${n.hasChildren?`<g class="mm-toggle" data-toggle="${n.branchIdx}" transform="translate(${w/2+3},0)">
+          <circle r="9"/><path d="M-4 0h8${n.collapsed?' M0 -4v8':''}"/></g>`:''}
+      </g>`;
+    });
+    g.innerHTML=html;
+    g.querySelectorAll('[data-goto]').forEach(n=>n.addEventListener('click',()=>go(n.dataset.goto)));
+    g.querySelectorAll('[data-toggle]').forEach(t=>t.addEventListener('click',e=>{
+      e.stopPropagation();
+      const i=+t.dataset.toggle;
+      if(collapsed.has(i)) collapsed.delete(i); else collapsed.add(i);
+      render();
+    }));
+  }
+  render(); apply();
+
   // zoom em torno de um ponto da tela (botão, roda do mouse/trackpad ou pinça)
   const zoomAt=(f,cx,cy)=>{
     const nw=Math.min(MAX_W,Math.max(MIN_W,vb.w*f)); f=nw/vb.w;
@@ -1858,7 +1900,6 @@ function buildMindmap(){
   document.getElementById('mm-in').onclick=()=>zoom(.8);
   document.getElementById('mm-out').onclick=()=>zoom(1.25);
   document.getElementById('mm-reset').onclick=()=>{vb={...VB0};apply();};
-  g.querySelectorAll('[data-goto]').forEach(n=>n.addEventListener('click',()=>go(n.dataset.goto)));
 }
 function pageFavoritos(){
   main().innerHTML = `
@@ -1999,7 +2040,7 @@ function go(route, opts={}){
   state.route=route; closeSidebar();
   if(!opts.preserveScroll) window.scrollTo(0,0);
   if(route==='home') pageHome();
-  else if(route.startsWith('lesson-')) pageLesson(+route.split('-')[1]);
+  else if(route.startsWith('lesson-')){ const [lessonPart,sectionId]=route.split('#'); pageLesson(+lessonPart.split('-')[1], sectionId); }
   else if(route==='quiz') pageQuiz();
   else if(route==='flash') pageFlash();
   else if(route==='dashboard') pageDashboard();
