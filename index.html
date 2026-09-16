@@ -1579,7 +1579,7 @@ function pageHome(){
   </section>`;
   postRender();
 }
-function pageLesson(id, sectionId){
+function pageLesson(id, sectionId, fromMindmap){
   const L = S().lessons, l = L.find(x=>x.id===id); if(!l) return pageHome();
   const idx = L.indexOf(l);
   main().innerHTML = `
@@ -1592,7 +1592,7 @@ function pageLesson(id, sectionId){
       <div class="mini-progress"><div class="mini-progress-bar" style="width:${lessonPct(l)}%"></div></div></div>
     </nav>
     <div class="lesson-body">
-      ${sectionId?`<button class="btn btn-ghost btn-sm" data-go="mapa" style="margin-bottom:14px">&larr; Voltar ao mapa mental</button>`:''}
+      ${(sectionId||fromMindmap)?`<button class="btn btn-ghost btn-sm" data-go="mapa" style="margin-bottom:14px">&larr; Voltar ao mapa mental</button>`:''}
       <div class="eyebrow">${S().nome} · Aula 0${l.id}</div>
       <h1>${l.title}</h1><p class="hero-sub small">${l.subtitle}</p>
       ${l.sections.map(s=>`
@@ -1835,7 +1835,7 @@ function buildMindmap(){
       </g>`;
     });
     g.innerHTML=html;
-    g.querySelectorAll('[data-goto]').forEach(n=>n.addEventListener('click',()=>go(n.dataset.goto)));
+    g.querySelectorAll('[data-goto]').forEach(n=>n.addEventListener('click',()=>go(n.dataset.goto, {fromMindmap:true})));
     g.querySelectorAll('[data-toggle]').forEach(t=>t.addEventListener('click',e=>{
       e.stopPropagation();
       const i=+t.dataset.toggle;
@@ -2041,7 +2041,7 @@ function go(route, opts={}){
   state.route=route; closeSidebar();
   if(!opts.preserveScroll) window.scrollTo(0,0);
   if(route==='home') pageHome();
-  else if(route.startsWith('lesson-')){ const [lessonPart,sectionId]=route.split('#'); pageLesson(+lessonPart.split('-')[1], sectionId); }
+  else if(route.startsWith('lesson-')){ const [lessonPart,sectionId]=route.split('#'); pageLesson(+lessonPart.split('-')[1], sectionId, !!opts.fromMindmap); }
   else if(route==='quiz') pageQuiz();
   else if(route==='flash') pageFlash();
   else if(route==='dashboard') pageDashboard();
