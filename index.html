@@ -1762,7 +1762,7 @@ function drawCharts(){
 function pageMapa(){
   main().innerHTML = `
   <div class="eyebrow">${S().nome}</div><h1>Mapa mental</h1>
-  <p class="hero-sub small">Arraste para navegar, use os botões para aproximar. Clique no nome de uma aula para abri-la.</p>
+  <p class="hero-sub small">Arraste para navegar. Use os botões, a roda do mouse ou dois dedos (pinça) para dar zoom. Clique no nome de uma aula para abri-la.</p>
   <div class="mindmap-wrap">
     <div class="mindmap-controls"><button class="icon-btn" id="mm-in">+</button><button class="icon-btn" id="mm-out">−</button>
     <button class="icon-btn" id="mm-reset" title="Centralizar">${ic('map')}</button></div>
@@ -1797,16 +1797,66 @@ function buildMindmap(){
       <text text-anchor="middle">${n.label}</text><rect class="mm-hit" x="${-w/2}" y="-16" width="${w}" height="32"/></g>`;
   });
   g.innerHTML=html;
-  const svg=document.getElementById('mm-svg'); let vb={x:0,y:0,w:1040,h:860};
+  const svg=document.getElementById('mm-svg'); const VB0={x:0,y:0,w:1040,h:860}; let vb={...VB0};
+  const MIN_W=240, MAX_W=2600;
   const apply=()=>svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`); apply();
-  const vp=document.getElementById('mm-vp'); let drag=false,sx,sy;
-  vp.addEventListener('pointerdown',e=>{drag=true;sx=e.clientX;sy=e.clientY;vp.classList.add('dragging');vp.setPointerCapture(e.pointerId);});
-  vp.addEventListener('pointermove',e=>{ if(!drag)return; const k=vb.w/vp.clientWidth; vb.x-=(e.clientX-sx)*k; vb.y-=(e.clientY-sy)*k; sx=e.clientX; sy=e.clientY; apply(); });
-  vp.addEventListener('pointerup',()=>{drag=false;vp.classList.remove('dragging');});
-  const zoom=f=>{ const a=vb.x+vb.w/2,b=vb.y+vb.h/2; vb.w*=f; vb.h*=f; vb.x=a-vb.w/2; vb.y=b-vb.h/2; apply(); };
+  const vp=document.getElementById('mm-vp');
+  // zoom em torno de um ponto da tela (botão, roda do mouse/trackpad ou pinça)
+  const zoomAt=(f,cx,cy)=>{
+    const nw=Math.min(MAX_W,Math.max(MIN_W,vb.w*f)); f=nw/vb.w;
+    const rect=vp.getBoundingClientRect();
+    const px=vb.x+(cx-rect.left)*(vb.w/rect.width), py=vb.y+(cy-rect.top)*(vb.h/rect.height);
+    vb.w*=f; vb.h*=f;
+    vb.x=px-(cx-rect.left)*(vb.w/rect.width); vb.y=py-(cy-rect.top)*(vb.h/rect.height);
+    apply();
+  };
+  const zoom=f=>{ const rect=vp.getBoundingClientRect(); zoomAt(f, rect.left+rect.width/2, rect.top+rect.height/2); };
+  // arraste com 1 dedo/mouse, pinça com 2 dedos (zoom + pan simultâneos)
+  const pts=new Map(); let dragLast=null, pinch=null;
+  vp.addEventListener('pointerdown',e=>{
+    try{ vp.setPointerCapture(e.pointerId); }catch(err){}
+    pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pts.size===1){ vp.classList.add('dragging'); dragLast={x:e.clientX,y:e.clientY}; }
+    else if(pts.size===2){
+      dragLast=null;
+      const [a,b]=[...pts.values()];
+      const rect=vp.getBoundingClientRect();
+      const cx=(a.x+b.x)/2, cy=(a.y+b.y)/2;
+      pinch={ dist:Math.hypot(a.x-b.x,a.y-b.y), vb:{...vb},
+        svgCx: vb.x+(cx-rect.left)*(vb.w/rect.width), svgCy: vb.y+(cy-rect.top)*(vb.h/rect.height) };
+    }
+  });
+  vp.addEventListener('pointermove',e=>{
+    if(!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pts.size===2 && pinch){
+      const [a,b]=[...pts.values()];
+      const dist=Math.hypot(a.x-b.x,a.y-b.y)||1;
+      const rect=vp.getBoundingClientRect();
+      const cx=(a.x+b.x)/2, cy=(a.y+b.y)/2;
+      const nw=Math.min(MAX_W,Math.max(MIN_W, pinch.vb.w*(pinch.dist/dist)));
+      const nh=pinch.vb.h*(nw/pinch.vb.w);
+      vb.w=nw; vb.h=nh;
+      vb.x=pinch.svgCx-(cx-rect.left)*(nw/rect.width);
+      vb.y=pinch.svgCy-(cy-rect.top)*(nh/rect.height);
+      apply();
+    } else if(pts.size===1 && dragLast){
+      const rect=vp.getBoundingClientRect();
+      vb.x-=(e.clientX-dragLast.x)*(vb.w/rect.width); vb.y-=(e.clientY-dragLast.y)*(vb.h/rect.height);
+      dragLast={x:e.clientX,y:e.clientY}; apply();
+    }
+  });
+  const endPt=e=>{
+    pts.delete(e.pointerId); pinch=null;
+    if(pts.size===1){ dragLast=[...pts.values()][0]; } else { dragLast=null; vp.classList.remove('dragging'); }
+  };
+  vp.addEventListener('pointerup',endPt);
+  vp.addEventListener('pointercancel',endPt);
+  vp.addEventListener('pointerleave',e=>{ if(pts.size<2) endPt(e); });
+  vp.addEventListener('wheel',e=>{ e.preventDefault(); zoomAt(e.deltaY<0?0.9:1.1, e.clientX, e.clientY); },{passive:false});
   document.getElementById('mm-in').onclick=()=>zoom(.8);
   document.getElementById('mm-out').onclick=()=>zoom(1.25);
-  document.getElementById('mm-reset').onclick=()=>{vb={x:0,y:0,w:1040,h:860};apply();};
+  document.getElementById('mm-reset').onclick=()=>{vb={...VB0};apply();};
   g.querySelectorAll('[data-goto]').forEach(n=>n.addEventListener('click',()=>go(n.dataset.goto)));
 }
 function pageFavoritos(){
