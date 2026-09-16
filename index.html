@@ -790,13 +790,13 @@ function renderAuthLogin(err=''){
   </div>`);
   document.getElementById('login-form').addEventListener('submit', e=>{
     e.preventDefault();
-    const email=document.getElementById('auth-email').value.trim(), pass=document.getElementById('auth-pass').value;
+    const email=document.getElementById('auth-email').value.trim().toLowerCase(), pass=document.getElementById('auth-pass').value;
     auth.signInWithEmailAndPassword(email, pass).catch(er=>renderAuthLogin(authErrMsg(er)));
   });
   document.getElementById('to-signup').addEventListener('click', ()=>renderAuthSignup());
   document.getElementById('to-landing').addEventListener('click', ()=>renderLanding());
   document.getElementById('btn-forgot').addEventListener('click', ()=>{
-    const email=document.getElementById('auth-email').value.trim();
+    const email=document.getElementById('auth-email').value.trim().toLowerCase();
     if(!email){ renderAuthLogin('Digite seu e-mail no campo acima e clique em "Esqueci minha senha" de novo.'); return; }
     auth.sendPasswordResetEmail(email)
       .then(()=>renderAuthLogin('Enviamos um link de redefinição de senha para ' + email + '.'))
@@ -822,7 +822,7 @@ function renderAuthSignup(err=''){
   </div>`);
   document.getElementById('signup-form').addEventListener('submit', e=>{
     e.preventDefault();
-    const email=document.getElementById('auth-email').value.trim(), pass=document.getElementById('auth-pass').value, pass2=document.getElementById('auth-pass2').value;
+    const email=document.getElementById('auth-email').value.trim().toLowerCase(), pass=document.getElementById('auth-pass').value, pass2=document.getElementById('auth-pass2').value;
     if(!document.getElementById('auth-terms').checked){ renderAuthSignup('É preciso aceitar os Termos de Uso e a Política de Privacidade.'); return; }
     if(pass!==pass2){ renderAuthSignup('As senhas não coincidem.'); return; }
     auth.createUserWithEmailAndPassword(email, pass).then(cred=>{
@@ -894,7 +894,7 @@ function initFirebaseAuth(){
   db = firebase.firestore();
   auth.onAuthStateChanged(async user=>{
     if(!user){ appInitialized=false; isAdmin=false; cleanupSession(); renderLanding(); return; }
-    if(user.email===ADMIN_EMAIL){ isAdmin=true; if(!mySessionId) registerSession(user.uid); showApp(); return; }
+    if(user.email && user.email.toLowerCase()===ADMIN_EMAIL.toLowerCase()){ isAdmin=true; if(!mySessionId) registerSession(user.uid); showApp(); return; }
     try{
       const doc = await db.collection('users').doc(user.uid).get();
       if(doc.exists && doc.data().approved){
@@ -1923,7 +1923,7 @@ async function pageAprovacoes(){
     const approvedCount = (pricingDoc.exists && typeof pricingDoc.data().approvedCount==='number') ? pricingDoc.data().approvedCount : 0;
     const users = []; snap.forEach(d=>users.push({id:d.id, ...d.data()}));
     const pending = users.filter(u=>!u.approved);
-    const approved = users.filter(u=>u.approved && u.email!==ADMIN_EMAIL);
+    const approved = users.filter(u=>u.approved && (u.email||'').toLowerCase()!==ADMIN_EMAIL.toLowerCase());
     box.innerHTML = `
       <div class="callout" style="margin-bottom:26px">Preço atual: <strong>R$ ${currentPrice(approvedCount)},00</strong> — ${approvedCount} de ${PIX_TIER_LIMIT} vagas na faixa promocional já aprovadas.</div>
       <h3 style="margin-top:8px">Pendentes (${pending.length})</h3>
