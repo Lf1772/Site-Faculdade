@@ -1592,6 +1592,7 @@ function pageLesson(id, sectionId){
       <div class="mini-progress"><div class="mini-progress-bar" style="width:${lessonPct(l)}%"></div></div></div>
     </nav>
     <div class="lesson-body">
+      ${sectionId?`<button class="btn btn-ghost btn-sm" data-go="mapa" style="margin-bottom:14px">&larr; Voltar ao mapa mental</button>`:''}
       <div class="eyebrow">${S().nome} · Aula 0${l.id}</div>
       <h1>${l.title}</h1><p class="hero-sub small">${l.subtitle}</p>
       ${l.sections.map(s=>`
