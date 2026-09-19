@@ -173,7 +173,7 @@ na regra do `content` no Firestore.
 ## Página de vendas
 
 Quem não está logado agora vê primeiro uma página de vendas (apresentando
-as 4 matérias, os recursos do site e o preço) em vez de cair direto na
+as matérias, os recursos do site e o preço) em vez de cair direto na
 tela de login. Os botões "Já sou aluno" / "Criar minha conta" levam pras
 telas de sempre. Não precisa configurar nada — já funciona.
 

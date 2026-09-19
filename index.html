@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Curso·Jurídico — Trabalho, Processo Civil e Obrigações</title>
-<meta name="description" content="Guia de estudos interativo de Direito: Trabalho, Processo Civil, Obrigações e Proteção Penal, com resumos, simulados, flashcards, mapa mental e certificado em PDF.">
+<meta name="description" content="Guia de estudos interativo de Direito: Trabalho, Processo Civil, Obrigações, Proteção Penal e Licitações e Contratos Administrativos, com resumos, simulados, flashcards, mapa mental e certificado em PDF.">
 <meta name="theme-color" content="#0f0d0a">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Curso·Jurídico — Guia de estudos de Direito">
-<meta property="og:description" content="Trabalho, Processo Civil, Obrigações e Proteção Penal: resumos, simulados, flashcards, mapa mental e certificado em PDF.">
+<meta property="og:description" content="Trabalho, Processo Civil, Obrigações, Proteção Penal e Licitações e Contratos Administrativos: resumos, simulados, flashcards, mapa mental e certificado em PDF.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%230f0d0a'/%3E%3Cpath d='M12 5v14M8 19h8M6.5 8h11M6.5 8l-2.5 5a2.4 2.4 0 004.8 0zM17.5 8l2.5 5a2.4 2.4 0 01-4.8 0z' fill='none' stroke='%23c9a574' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -57,6 +57,12 @@
   --text:#ecdfdf; --text-muted:#ab9494; --accent:#8b5555;
   --border:rgba(201,138,138,.18); --border-strong:rgba(201,138,138,.34);
 }
+[data-subject="licitacoes"]{
+  --gold:#a894c9; --gold-soft:rgba(168,148,201,.16);
+  --bg:#0d0a10; --bg-raised:#141019; --bg-raised-2:#1a1420;
+  --text:#e6dfec; --text-muted:#9c8fab; --accent:#6b5587;
+  --border:rgba(168,148,201,.18); --border-strong:rgba(168,148,201,.34);
+}
 [data-theme="light"]{
   --bg:#faf9f7; --bg-raised:#ffffff; --bg-raised-2:#f3efe8;
   --text:#1a1815; --text-muted:#766a5c;
@@ -80,6 +86,12 @@
   --text:#1a1111; --text-muted:#765c5c;
   --gold:#8f3d3d; --gold-soft:rgba(143,61,61,.14);
   --border:rgba(143,61,61,.22); --border-strong:rgba(143,61,61,.4);
+}
+[data-theme="light"][data-subject="licitacoes"]{
+  --bg:#faf8fb; --bg-raised:#fff; --bg-raised-2:#f3eef7;
+  --text:#16111a; --text-muted:#6a5c76;
+  --gold:#6a4f92; --gold-soft:rgba(106,79,146,.16);
+  --border:rgba(106,79,146,.22); --border-strong:rgba(106,79,146,.4);
 }
 .badge-comp{background:var(--bg-raised-2); color:var(--text-muted); border:1px dashed var(--border-strong); margin-bottom:8px;}
 .comp-note{font-size:12.5px; color:var(--text-muted); border-left:2px solid var(--border-strong); padding-left:10px; margin:0 0 16px;}
@@ -691,6 +703,7 @@ function renderLanding(){
       <div class="landing-subject-card"><h4>Processo Civil</h4><p>Do processo de conhecimento a recursos, com guias completos.</p></div>
       <div class="landing-subject-card"><h4>Obrigações</h4><p>Teoria geral sem enrolação, com exemplos práticos.</p></div>
       <div class="landing-subject-card"><h4>Direito Penal</h4><p>Parte geral e os pontos que mais caem em prova.</p></div>
+      <div class="landing-subject-card"><h4>Licitações e Contratos Administrativos</h4><p>Responsabilidade do Estado, bens públicos e intervenção na propriedade privada.</p></div>
     </div>
     <div class="landing-features">
       <h2>O que vem incluso</h2>
@@ -937,7 +950,11 @@ const SUBJECTS = {
  obrigacoes:{key:'obrigacoes', nome:'Direito das Obrigações Civis', curto:'Obrigações', sigla:'OC',
    tagline:'Dos elementos da obrigação à solidariedade, com base no Código Civil.',
    fluxo:'Aula 1: conceito e elementos → Aula 2: fontes e classificações → Aula 3: dar, fazer e não fazer → Aula 4: compostas e solidariedade.',
-   certTexto:'concluiu o estudo da Teoria Geral das Obrigações: elementos e estrutura da relação obrigacional, fontes, obrigações propter rem, modalidades de dar, fazer e não fazer, e o regime das obrigações compostas e solidárias.'}
+   certTexto:'concluiu o estudo da Teoria Geral das Obrigações: elementos e estrutura da relação obrigacional, fontes, obrigações propter rem, modalidades de dar, fazer e não fazer, e o regime das obrigações compostas e solidárias.'},
+ licitacoes:{key:'licitacoes', nome:'Licitações e Contratos Administrativos', curto:'Licitações', sigla:'LCA',
+   tagline:'Da responsabilidade civil do Estado aos bens públicos e à intervenção na propriedade privada.',
+   fluxo:'Aula 1: responsabilidade extracontratual do Estado → Aula 2: bens públicos → Aula 3: intervenção do Estado na propriedade privada.',
+   certTexto:'concluiu o estudo da responsabilidade civil extracontratual do Estado, dos bens públicos e das formas de intervenção do Estado na propriedade privada.'}
 };
 
 /* ============ PRÉVIA GRÁTIS (amostra da Aula 1 de cada matéria, pra quem ainda não pagou) ============ */
@@ -1379,18 +1396,134 @@ const PREVIEW = {
     "aula": 1
    }
   ]
+ },
+ "licitacoes": {
+  "nome": "Licitações e Contratos Administrativos",
+  "curto": "Licitações",
+  "tagline": "Da responsabilidade civil do Estado aos bens públicos e à intervenção na propriedade privada.",
+  "lesson": {
+   "id": 1,
+   "title": "Responsabilidade Civil Extracontratual do Estado",
+   "subtitle": "Do dever geral de não lesar ao dever de indenizar: fundamentos, modalidades e hipóteses de responsabilização da Administração Pública.",
+   "sections": [
+    {
+     "id": "lc1-1",
+     "h": "Do neminem laedere ao dever de reparar",
+     "body": "<p>O ponto de partida é o princípio do <strong>neminem laedere</strong> — o dever geral de não lesar o direito alheio. Todos têm esse dever de <strong>1ª geração</strong>: o direito de cada pessoa termina onde começa o direito da outra.</p><p>Quando esse dever de 1ª geração é descumprido, nasce um dever de <strong>2ª geração</strong>: a <strong>responsabilidade civil</strong>. Ela é, antes de tudo, o dever de restaurar o <em>status quo ante</em> — devolver as coisas ao estado em que estavam antes da lesão. Quando isso não é mais possível, o dever se converte em <strong>indenizar</strong> ou <strong>compensar</strong> financeiramente o prejuízo.</p><div class=\"callout\"><strong>Aplicado ao Estado:</strong> a responsabilidade do Estado é justamente esse dever de 2ª geração — de reparar os danos que os seus agentes causarem a terceiros no exercício da função pública. Por envolver a Administração e não um particular, ela é chamada de <strong>responsabilidade extracontratual</strong> (ou aquiliana) do Estado, distinta da responsabilidade que o Estado assume como parte de um contrato administrativo.</div>"
+    },
+    {
+     "id": "lc1-2",
+     "h": "Fundamento constitucional e a teoria do risco administrativo",
+     "body": "<span class=\"badge badge-lei\">CF/88, art. 37, § 6º</span><p>A responsabilidade extracontratual do Estado tem fundamento direto no <strong>art. 37, § 6º, da Constituição Federal</strong>. Abrange os três Poderes — <strong>Executivo, Legislativo e Judiciário</strong> — sempre que atuam prestando função pública.</p><p>A teoria que explica essa responsabilidade é a <strong>teoria do risco administrativo</strong>: o Estado, ao desempenhar suas atividades para proteger a coletividade, cria um risco, e por isso responde pelos danos que esse risco produzir a terceiros — independentemente de dolo ou culpa do agente público.</p><div class=\"callout\"><strong>Mudança de entendimento do STF:</strong> por muito tempo, entendeu-se que o Estado respondia objetivamente apenas por <strong>ações</strong>, e subjetivamente por <strong>omissões</strong>. O STF revisou essa posição: hoje a responsabilidade do Estado é <strong>objetiva tanto por ação quanto por omissão</strong>.</div><p>Quando o Estado indeniza um dano causado por ato ilícito de um agente seu, pode voltar-se contra esse agente por meio de <strong>ação de regressão</strong> — mas, nesse caso, já se exige a prova de dolo ou culpa do agente, porque a responsabilidade pessoal dele é subjetiva.</p>"
+    },
+    {
+     "id": "lc1-3",
+     "h": "Três modelos de responsabilidade civil",
+     "body": "<p>Antes de entrar nas hipóteses específicas do Estado, é preciso distinguir os três modelos de responsabilidade civil trabalhados em sala:</p><div class=\"table-wrap\"><table class=\"styled-table\"><tr><th>Modelo</th><th>Requisitos</th><th>Observação</th></tr><tr><td><strong>Subjetiva</strong> (CC, art. 186)</td><td>Conduta + dano + nexo de causalidade + <strong>dolo ou culpa</strong></td><td>É a regra geral do Código Civil, aplicável entre particulares.</td></tr><tr><td><strong>Objetiva</strong> (CC, art. 187)</td><td>Conduta + dano + nexo de causalidade</td><td>Dispensa a prova de dolo ou culpa. É a que rege a responsabilidade do Estado.</td></tr><tr><td><strong>Integral</strong></td><td>Conduta + dano</td><td>Dispensa até o nexo de causalidade. Tem origem constitucional; reservada a hipóteses de risco muito elevado, em que isolar um nexo causal específico seria inviável.</td></tr></table></div><div class=\"callout\"><strong>Fixe:</strong> a responsabilidade do Estado é <strong>objetiva</strong>, fundada na teoria do risco administrativo. Ela não exige dolo nem culpa — mas continua exigindo conduta, dano e nexo de causalidade.</div>"
+    },
+    {
+     "id": "lc1-4",
+     "h": "Responsabilidade por conduta comissiva e as excludentes",
+     "body": "<p>Por <strong>ação</strong>, o Estado responde tanto quando pratica um <strong>ato ilícito</strong> quanto — em certos casos — quando pratica um <strong>ato lícito</strong> que, por criar uma situação de risco, acaba lesando terceiro.</p><h4 style=\"margin-top:18px\">Três circunstâncias que afastam a responsabilidade</h4><ul class=\"styled-list\"><li><strong>Conduta exclusiva de terceiro</strong></li><li><strong>Conduta exclusiva da vítima</strong></li><li><strong>Caso fortuito ou força maior</strong></li></ul><div class=\"callout\"><strong>Atenção — concorrência de causas:</strong> quando a vítima também contribuiu para o dano, isso <strong>não isenta</strong> o Estado de responder, apenas <strong>reduz o valor da indenização</strong>. Exemplo: se o cidadão agiu de forma imprudente, mas o Estado também falhou, a culpa do cidadão não apaga a falha estatal — só diminui o quanto é devido.</div><div class=\"callout\"><strong>Exemplo clássico — bala perdida:</strong> se um policial troca tiros com um criminoso e a bala, comprovadamente perdida, atinge um terceiro inocente que nada tinha a ver com o confronto, o Estado <strong>não responde</strong>. O Estado não é um <strong>segurador universal</strong>: só responde pelo risco que ele mesmo produziu, e não consegue estar presente em todos os lugares e situações o tempo todo.</div>"
+    },
+    {
+     "id": "lc1-5",
+     "h": "Quem pode responder: entes, entidades e concessionárias",
+     "body": "<p>A responsabilidade objetiva do art. 37, § 6º, da CF/88 alcança:</p><ul class=\"styled-list\"><li>União, Estados, Distrito Federal e Municípios;</li><li>autarquias e fundações públicas de natureza autárquica;</li><li>empresas públicas e sociedades de economia mista — <strong>mas só quando prestam serviço público</strong>. Quando exploram atividade econômica sem prestar serviço público (ex.: Petrobras, Banco do Brasil, em suas atividades tipicamente empresariais), a responsabilidade é <strong>subjetiva</strong>, como a de qualquer empresa privada;</li><li>concessionárias, permissionárias, autorizatárias e delegatárias de serviço público — o <strong>agente</strong>, para fins de responsabilidade objetiva, é todo aquele que está efetivamente prestando serviço público, público ou privado.</li></ul><p>A vítima pode propor a ação de indenização em face do ente público, da concessionária, ou de ambos em litisconsórcio — a escolha depende de qual caminho é mais eficiente para obter a reparação.</p><div class=\"callout\"><strong>Bens da concessionária:</strong> os bens diretamente afetados à prestação do serviço público (ex.: os caminhões de uma empresa de limpeza urbana concessionária) são <strong>impenhoráveis</strong>. Já os bens da concessionária que não estão vinculados ao serviço público podem ser normalmente penhorados.</div>"
+    },
+    {
+     "id": "lc1-6",
+     "h": "Responsabilidade por conduta omissiva",
+     "body": "<p>Desde a mudança de entendimento do STF, a responsabilidade por <strong>omissão</strong> também é <strong>objetiva</strong> — mas a análise passa antes por identificar o tipo de omissão.</p><div class=\"table-wrap\"><table class=\"styled-table\"><tr><th>Tipo de omissão</th><th>O Estado responde?</th><th>Por quê</th></tr><tr><td><strong>Genérica</strong></td><td>Não</td><td>O Estado <strong>não é um segurador universal</strong>. Sem um dever jurídico específico e individualizado de agir naquele caso, falta o nexo de causalidade entre a omissão e o dano.</td></tr><tr><td><strong>Específica</strong></td><td>Sim</td><td>O Estado assumiu, naquela situação, a posição de <strong>agente garantidor</strong> — tinha o dever individualizado de evitar o dano e não agiu.</td></tr></table></div><div class=\"callout\"><strong>Exemplo — omissão genérica:</strong> um assalto que acontece numa rua qualquer, sem policiamento reforçado naquele local, em regra não gera dever de indenizar — o Estado não tem como garantir segurança em cada esquina.</div><div class=\"callout\"><strong>Exemplo — omissão específica:</strong> um detento sob custódia do Estado, morto dentro do presídio por outros presos durante uma rebelião amplamente previsível, tende a configurar omissão específica — ali o Estado tinha o dever individualizado de garantir a integridade de quem está sob sua custódia.</div>"
+    },
+    {
+     "id": "lc1-7",
+     "h": "Indenização por ato lícito",
+     "body": "<p>Mesmo um ato <strong>lícito e legítimo</strong> do Poder Público pode gerar dever de indenizar. A construção é de <strong>Celso Antônio Bandeira de Mello</strong>, adotada pelo STF.</p><p>O fundamento não é a quebra da legalidade — o ato é legal — mas o <strong>princípio da isonomia</strong> (também chamado de solidariedade social): se uma ação do Poder Público beneficia toda a coletividade, mas o ônus recai de forma pesada e desproporcional sobre apenas um ou poucos indivíduos, é justo que a coletividade, por meio do Estado, custeie a compensação, reequilibrando o que a igualdade exige.</p><div class=\"callout\"><strong>Dois requisitos cumulativos:</strong> o dano precisa ser <strong>especial</strong> (atinge um particular ou grupo determinado, não a coletividade como um todo) e <strong>anormal</strong> (supera os dissabores normais da vida em sociedade ou da atuação estatal comum).</div>"
+    },
+    {
+     "id": "lc1-8",
+     "h": "Responsabilidade por conduta legislativa: ação",
+     "body": "<p>O Legislativo também pode gerar dever de indenizar, tanto por ação quanto por omissão.</p><h4 style=\"margin-top:18px\">Por ação: a lei inconstitucional</h4><p>É preciso, antes de tudo, um <strong>acórdão do STF</strong> reconhecendo a inconstitucionalidade da lei, somado a <strong>nexo de causalidade</strong> e <strong>dano</strong>. Esse acórdão pode vir por duas vias:</p><div class=\"table-wrap\"><table class=\"styled-table\"><tr><th>Via</th><th>Como funciona</th></tr><tr><td><strong>Controle difuso</strong></td><td>O processo começa na 1ª instância e chega ao STF por recurso. Mesmo sendo originalmente uma ação individual, ao ser julgada pelo STF, passa a ter repercussão geral, com efeito <em>erga omnes</em> e vinculante.</td></tr><tr><td><strong>Controle concentrado</strong></td><td>A ação já nasce diretamente no STF (ex.: ADI), com repercussão geral, efeito <em>erga omnes</em> e vinculante desde o início.</td></tr></table></div><div class=\"callout\"><strong>Eficácia da decisão:</strong> em regra, os efeitos são <strong>ex nunc</strong> — só valem a partir da publicação do acórdão, alcançando apenas quem sofreu dano dali para frente. É possível também eficácia <strong>ex tunc</strong> (retroage) ou <strong>pro futuro</strong>, conforme o STF module os efeitos da decisão.</div>"
+    },
+    {
+     "id": "lc1-9",
+     "h": "Responsabilidade por conduta legislativa: omissão, e a lei de efeitos concretos",
+     "body": "<h4>Omissão do Legislativo</h4><p>Ocorre quando uma norma constitucional de <strong>eficácia limitada</strong> — que depende de regulamentação por lei infraconstitucional para produzir efeitos — permanece sem essa regulamentação, gerando prejuízo a quem deveria se beneficiar dela.</p><p>Também aqui é necessário um <strong>acórdão do STF declarando a mora do legislativo</strong>, obtido por duas vias:</p><ul class=\"styled-list\"><li><strong>ADO</strong> (Ação Direta de Inconstitucionalidade por Omissão) — controle <strong>concentrado</strong>;</li><li><strong>Mandado de Injunção</strong> — controle <strong>difuso</strong>.</li></ul><h4 style=\"margin-top:22px\">Lei de efeitos concretos</h4><p>É uma figura híbrida: <strong>formalmente</strong> é uma lei (passa pelo processo legislativo), mas <strong>materialmente</strong> é um ato administrativo — porque se esgota numa única aplicação concreta, sem a generalidade e abstração típicas de uma lei. Um exemplo é uma lei que redesenha os limites de um bairro ou região específica: ela só se aplica àquele caso, uma única vez.</p>"
+    },
+    {
+     "id": "lc1-10",
+     "h": "Responsabilidade do Estado por atos jurisdicionais",
+     "body": "<p>A regra geral é que o Estado <strong>não responde</strong> pelo conteúdo de decisões judiciais regularmente proferidas. O material de aula trabalha três hipóteses principais em que essa responsabilidade pode surgir: <strong>erro judiciário</strong>, <strong>prisão além do tempo fixado</strong> e <strong>demora na prestação jurisdicional</strong>, com fundamento no <strong>art. 5º, LXXV e LXXVIII, da CF/88</strong>.</p><h4 style=\"margin-top:18px\">Erro judiciário e o erro teratológico</h4><p>Nem toda decisão posteriormente reformada gera indenização. O ponto central é o conceito de <strong>erro teratológico</strong>: um erro grosseiro, evidente, absurdo e juridicamente inadmissível — bem diferente de uma interpretação de prova apenas discutível.</p><div class=\"callout\"><strong>Exemplo de erro teratológico:</strong> condenar alguém por um crime que já não existe mais no ordenamento jurídico (ex.: adultério, hoje descriminalizado). Isso é qualitativamente diferente de o juiz ter interpretado mal uma prova.</div><div class=\"callout\"><strong>Atenção — pegadinha clássica:</strong> <em>posterior absolvição não significa automaticamente erro judiciário</em>, assim como uma decisão reformada em grau de recurso não significa automaticamente erro judiciário. É preciso analisar se a decisão, no momento em que foi tomada, tinha fundamento jurídico razoável.</div><h4 style=\"margin-top:22px\">A distinção juiz x cartório</h4><p>Parte da doutrina (posição adotada pelo material de aula) distingue o erro da <strong>atividade jurisdicional</strong> propriamente dita (a decisão do juiz) do erro da <strong>atividade administrativa dos serviços auxiliares</strong> do Judiciário (o cartório).</p><div class=\"callout\"><strong>Exemplo:</strong> o juiz determina corretamente a prisão de uma pessoa, mas o cartório, por erro material, expede o mandado contra outra pessoa. Nessa linha, isso não seria propriamente erro da atividade jurisdicional do magistrado, mas falha administrativa do serviço judiciário — atraindo a responsabilidade objetiva comum do <strong>art. 37, § 6º, da CF</strong> (regime geral), e não o regime específico de erro judiciário. <strong>Cuidado:</strong> essa distinção não é unânime na doutrina — na prova, a resposta mais segura é situá-la como a posição do material de aula, não como consenso.</div>"
+    },
+    {
+     "id": "lc1-11",
+     "h": "Prisão além do tempo fixado e demora na prestação jurisdicional",
+     "body": "<h4>Prisão além do tempo fixado</h4><p>Ocorre quando uma pessoa deveria ser libertada em determinada data, mas, por falha estatal, permanece presa além desse prazo — ficando privada da liberdade, por aquele período excedente, <strong>sem fundamento jurídico</strong>. Aqui há possibilidade de responsabilização estatal.</p><div class=\"callout\"><strong>De novo a distinção juiz x aparato administrativo:</strong> se o juiz determinou corretamente a soltura, mas os órgãos administrativos não cumpriram a ordem a tempo, o problema não está na atividade jurisdicional em si, mas num mau funcionamento administrativo do serviço judiciário. Um fato ocorrido \"dentro\" do Judiciário não significa, automaticamente, erro do juiz.</div><h4 style=\"margin-top:22px\">Demora na prestação jurisdicional</h4><p>A terceira hipótese é a demora injustificada do Poder Judiciário em prestar a tutela jurisdicional. Mas <strong>processo demorado não gera indenização automática</strong>: é preciso que a demora seja <strong>anormal ou injustificável</strong>, violando a garantia da razoável duração do processo (art. 5º, LXXVIII, da CF) e causando dano efetivo.</p>"
+    }
+   ]
+  },
+  "flash": [
+   {
+    "aula": 1,
+    "f": "O que é a teoria do risco administrativo?",
+    "b": "O Estado responde objetivamente pelos danos decorrentes do risco que ele mesmo produz ao exercer suas atividades para proteger a coletividade — independentemente de dolo ou culpa."
+   },
+   {
+    "aula": 1,
+    "f": "Quais são os três tipos de responsabilidade civil vistos em aula?",
+    "b": "Subjetiva (art. 186 CC — exige dolo/culpa), objetiva (art. 187 CC — dispensa dolo/culpa) e integral (dispensa até o nexo de causalidade, para riscos muito elevados)."
+   },
+   {
+    "aula": 1,
+    "f": "Omissão genérica x omissão específica — qual gera dever de indenizar?",
+    "b": "Só a específica, quando o Estado é agente garantidor com dever individualizado de agir naquele caso (ex.: integridade de um detento sob custódia)."
+   },
+   {
+    "aula": 1,
+    "f": "O que é erro teratológico?",
+    "b": "Erro judiciário grosseiro, evidente, absurdo e juridicamente inadmissível — ex.: condenar alguém por um crime que já não existe mais no ordenamento. Diferente de uma interpretação de prova discutível."
+   }
+  ],
+  "questions": [
+   {
+    "q": "A responsabilidade extracontratual do Estado tem fundamento em qual dispositivo constitucional?",
+    "opts": [
+     "Art. 5º, XXII, da CF",
+     "Art. 37, § 6º, da CF",
+     "Art. 186 do Código Civil",
+     "Art. 927 do Código Civil"
+    ],
+    "correct": 1,
+    "exp": "O art. 37, § 6º, da CF/88 é o fundamento direto da responsabilidade extracontratual do Estado, abrangendo os três Poderes.",
+    "aula": 1
+   },
+   {
+    "q": "Qual teoria explica a responsabilidade do Estado como decorrente do risco que ele mesmo produz ao proteger a coletividade?",
+    "opts": [
+     "Teoria da culpa presumida",
+     "Teoria do risco integral",
+     "Teoria do risco administrativo",
+     "Teoria da imprevisão"
+    ],
+    "correct": 2,
+    "exp": "A teoria do risco administrativo fundamenta a responsabilidade objetiva do Estado: ele responde pelos danos decorrentes do risco que produz ao atuar.",
+    "aula": 1
+   }
+  ]
  }
 };
 
 /* ============ ESTADO ============ */
 const state = {
   subject:'trabalho', route:'home', theme:'dark',
-  done:{trabalho:{}, processo:{}, obrigacoes:{}, penal:{}},
-  favs:{trabalho:[], processo:[], obrigacoes:[], penal:[]},
+  done:{trabalho:{}, processo:{}, obrigacoes:{}, penal:{}, licitacoes:{}},
+  favs:{trabalho:[], processo:[], obrigacoes:[], penal:[], licitacoes:[]},
   quiz:{trabalho:{level:null,i:0,answers:[],finished:false,history:[]},
         processo:{level:null,i:0,answers:[],finished:false,history:[]},
         obrigacoes:{level:null,i:0,answers:[],finished:false,history:[]},
-        penal:{level:null,i:0,answers:[],finished:false,history:[]}},
+        penal:{level:null,i:0,answers:[],finished:false,history:[]},
+        licitacoes:{level:null,i:0,answers:[],finished:false,history:[]}},
   flashFilter:'todas', certName:'', scrollY:0
 };
 /* ============ PERSISTÊNCIA (localStorage + Firestore) ============ */
@@ -1933,8 +2066,8 @@ function pageCert(){
   document.getElementById('cert-dl').addEventListener('click',()=>{
     if(!window.jspdf) return alert('Não foi possível carregar o gerador de PDF.');
     const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-    const darkMap={trabalho:[15,13,10],processo:[10,13,16],obrigacoes:[10,16,12],penal:[16,10,10]};
-    const accMap={trabalho:[201,165,116],processo:[127,168,201],obrigacoes:[143,191,159],penal:[201,138,138]};
+    const darkMap={trabalho:[15,13,10],processo:[10,13,16],obrigacoes:[10,16,12],penal:[16,10,10],licitacoes:[13,10,16]};
+    const accMap={trabalho:[201,165,116],processo:[127,168,201],obrigacoes:[143,191,159],penal:[201,138,138],licitacoes:[168,148,201]};
     const dark=darkMap[state.subject], acc=accMap[state.subject];
     doc.setFillColor(...dark); doc.rect(0,0,297,210,'F');
     doc.setDrawColor(...acc); doc.setLineWidth(1.4); doc.rect(12,12,273,186);
