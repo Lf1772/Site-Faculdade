@@ -1542,6 +1542,13 @@ function persist(){
 }
 let isResetting = false;
 function saveScrollAndPersist(){ if(isResetting) return; state.scrollY = window.scrollY; persist(); }
+function ensureStateShape(){
+  Object.keys(SUBJECTS).forEach(k=>{
+    if(!state.done[k]) state.done[k]={};
+    if(!state.favs[k]) state.favs[k]=[];
+    if(!state.quiz[k]) state.quiz[k]={level:null,i:0,answers:[],finished:false,history:[]};
+  });
+}
 function loadPersisted(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -1549,6 +1556,7 @@ function loadPersisted(){
     const saved = JSON.parse(raw);
     Object.assign(state, saved);
   }catch(e){ /* dado salvo corrompido — mantém o estado padrão */ }
+  ensureStateShape();
 }
 function progressDocRef(){
   return db.collection('users').doc(auth.currentUser.uid).collection('progress').doc('state');
@@ -1571,6 +1579,7 @@ async function loadCloudProgress(){
       if(cloud.quiz) state.quiz = cloud.quiz;
       if(typeof cloud.flashFilter === 'string') state.flashFilter = cloud.flashFilter;
       if(typeof cloud.certName === 'string') state.certName = cloud.certName;
+      ensureStateShape();
     }else{
       await pushCloudProgress();
     }
