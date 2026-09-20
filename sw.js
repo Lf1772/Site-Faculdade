@@ -2,7 +2,7 @@
    index.html, o manifest e os ícones), pra permitir instalar como app e
    abrir mais rápido. Nunca intercepta Firebase/CDNs externos: login,
    conteúdo e pagamento sempre dependem de internet, como já era antes. */
-const CACHE_NAME = 'cursojuridico-shell-v1';
+const CACHE_NAME = 'cursojuridico-shell-v2';
 const APP_SHELL = [
   './',
   './index.html',
