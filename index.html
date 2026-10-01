@@ -1564,6 +1564,7 @@ const state = {
         obrigacoes:{level:null,i:0,answers:[],finished:false,history:[]},
         penal:{level:null,i:0,answers:[],finished:false,history:[]},
         licitacoes:{level:null,i:0,answers:[],finished:false,history:[]}},
+  av:{trabalho:'av1', processo:'av1', obrigacoes:'av1', penal:'av1', licitacoes:'av1'},
   flashFilter:'todas', certName:'', scrollY:0
 };
 /* ============ PERSISTÊNCIA (localStorage + Firestore) ============ */
@@ -1573,7 +1574,7 @@ function persist(){
   try{
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       subject:state.subject, theme:state.theme, done:state.done, favs:state.favs,
-      quiz:state.quiz, flashFilter:state.flashFilter, certName:state.certName,
+      quiz:state.quiz, av:state.av, flashFilter:state.flashFilter, certName:state.certName,
       route:state.route, scrollY:state.scrollY
     }));
   }catch(e){ /* localStorage indisponível (modo privado, quota excedida etc.) */ }
@@ -1587,7 +1588,22 @@ function ensureStateShape(){
     if(!state.done[k]) state.done[k]={};
     if(!state.favs[k]) state.favs[k]=[];
     if(!state.quiz[k]) state.quiz[k]={level:null,i:0,answers:[],finished:false,history:[]};
+    if(!state.av[k]) state.av[k]='av1';
   });
+}
+function avOf(){ return state.av[state.subject]==='av2' ? 2 : 1; }
+function avTabsHtml(){
+  const cur = state.av[state.subject];
+  return `<div class="level-picker" style="margin-bottom:18px">
+    <button class="level-chip ${cur!=='av2'?'active':''}" data-av="av1">Matéria da AV1</button>
+    <button class="level-chip ${cur==='av2'?'active':''}" data-av="av2">Matéria da AV2</button>
+  </div>`;
+}
+function bindAvTabs(onChange){
+  main().querySelectorAll('[data-av]').forEach(b=>b.addEventListener('click',()=>{
+    if(state.av[state.subject]===b.dataset.av) return;
+    state.av[state.subject]=b.dataset.av; persist(); onChange();
+  }));
 }
 function loadPersisted(){
   try{
@@ -1602,7 +1618,7 @@ function progressDocRef(){
   return db.collection('users').doc(auth.currentUser.uid).collection('progress').doc('state');
 }
 function progressSnapshot(){
-  return { done:state.done, favs:state.favs, quiz:state.quiz, flashFilter:state.flashFilter, certName:state.certName };
+  return { done:state.done, favs:state.favs, quiz:state.quiz, av:state.av, flashFilter:state.flashFilter, certName:state.certName };
 }
 async function pushCloudProgress(){
   if(!auth || !auth.currentUser) return;
@@ -1617,6 +1633,7 @@ async function loadCloudProgress(){
       if(cloud.done) state.done = cloud.done;
       if(cloud.favs) state.favs = cloud.favs;
       if(cloud.quiz) state.quiz = cloud.quiz;
+      if(cloud.av) state.av = cloud.av;
       if(typeof cloud.flashFilter === 'string') state.flashFilter = cloud.flashFilter;
       if(typeof cloud.certName === 'string') state.certName = cloud.certName;
       ensureStateShape();
@@ -1709,7 +1726,9 @@ function refreshSubjectUI(){
 }
 function renderSidebarLessons(){
   const ul = document.getElementById('nav-lessons');
-  ul.innerHTML = S().lessons.map(l=>`<li class="nav-item" data-go="lesson-${l.id}"><span class="nav-num">0${l.id}</span><span class="nav-label">${l.title}</span><span class="nav-pct">${lessonPct(l)}%</span></li>`).join('');
+  const lessons = S().lessons.filter(l=>(l.av||1)===avOf());
+  ul.innerHTML = lessons.length ? lessons.map(l=>`<li class="nav-item" data-go="lesson-${l.id}"><span class="nav-num">0${l.id}</span><span class="nav-label">${l.title}</span><span class="nav-pct">${lessonPct(l)}%</span></li>`).join('')
+    : `<li class="small muted" style="padding:8px 12px">Nenhuma aula publicada aqui ainda.</li>`;
   ul.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',()=>go(el.dataset.go)));
   markActive();
 }
@@ -1723,7 +1742,7 @@ const main = () => document.getElementById('main');
 
 /* ============ PÁGINAS ============ */
 function pageHome(){
-  const sub = S();
+  const sub = S(), avLessons = sub.lessons.filter(l=>(l.av||1)===avOf());
   main().innerHTML = `
   <section class="hero">
     <span class="gavel-line"></span>
@@ -1737,15 +1756,16 @@ function pageHome(){
   </section>
   <section class="section reveal">
     <h2 class="section-title">Aulas</h2>
+    ${avTabsHtml()}
     <p class="muted">${sub.fluxo}</p>
     <div class="lesson-grid">
-      ${sub.lessons.map(l=>`
+      ${avLessons.length ? avLessons.map(l=>`
         <div class="lesson-card" data-go="lesson-${l.id}">
           <div class="lesson-card-top"><span class="lesson-num">0${l.id}</span>
           ${lessonPct(l)===100?`<span class="badge badge-success">${ic('check')} Concluída</span>`:`<span class="badge">${l.sections.length} tópicos</span>`}</div>
           <h3>${l.title}</h3><p class="small muted">${l.subtitle}</p>
           <div class="mini-progress"><div class="mini-progress-bar" style="width:${lessonPct(l)}%"></div></div>
-        </div>`).join('')}
+        </div>`).join('') : `<p class="muted">Conteúdo da ${state.av[state.subject]==='av2'?'AV2':'AV1'} ainda não foi publicado aqui.</p>`}
     </div>
   </section>
   <section class="section section-tools reveal">
@@ -1759,10 +1779,12 @@ function pageHome(){
       <div class="tool-card" data-go="certificado">${ic('cert')}<h4>Certificado</h4><p class="small muted">Disponível ao concluir 100% dos tópicos.</p></div>
     </div>
   </section>`;
+  bindAvTabs(pageHome);
   postRender();
 }
 function pageLesson(id, sectionId, fromMindmap){
-  const L = S().lessons, l = L.find(x=>x.id===id); if(!l) return pageHome();
+  const all = S().lessons, l = all.find(x=>x.id===id); if(!l) return pageHome();
+  const L = all.filter(x=>(x.av||1)===(l.av||1));
   const idx = L.indexOf(l);
   main().innerHTML = `
   <div class="lesson-shell">
@@ -1775,7 +1797,7 @@ function pageLesson(id, sectionId, fromMindmap){
     </nav>
     <div class="lesson-body">
       ${(sectionId||fromMindmap)?`<button class="btn btn-ghost btn-sm" data-go="mapa" style="margin-bottom:14px">&larr; Voltar ao mapa mental</button>`:''}
-      <div class="eyebrow">${S().nome} · Aula 0${l.id}</div>
+      <div class="eyebrow">${S().nome} · ${(l.av||1)===2?'AV2':'AV1'} · Aula 0${l.id}</div>
       <h1>${l.title}</h1><p class="hero-sub small">${l.subtitle}</p>
       ${l.sections.map(s=>`
         <section class="lesson-section reveal" id="sec-${s.id}">
@@ -1819,24 +1841,28 @@ function pageLesson(id, sectionId, fromMindmap){
 }
 function pageQuiz(){ const q=Q(); if(q.level===null) return quizIntro(); if(q.level==='discursivas') return quizDisc(); if(q.finished) return quizResult(); return quizActive(); }
 function quizIntro(){
-  const q=Q(), sub=S();
+  const q=Q(), sub=S(), av=avOf();
+  const byAv = arr => arr.filter(x=>(x.av||1)===av);
+  const facil=byAv(sub.questions.facil), medio=byAv(sub.questions.medio), dificil=byAv(sub.questions.dificil), disc=byAv(sub.discursivas);
   main().innerHTML = `
   <div class="quiz-intro"><div class="eyebrow">${sub.nome}</div><h1>Simulado</h1>
+    ${avTabsHtml()}
     <p class="muted">Escolha um nível. As questões são embaralhadas e cada resposta traz o comentário com o fundamento legal.</p>
     <div class="level-picker">
-      <button class="level-chip" data-level="facil">Fácil · ${sub.questions.facil.length}</button>
-      <button class="level-chip" data-level="medio">Médio · ${sub.questions.medio.length}</button>
-      <button class="level-chip" data-level="dificil">Difícil · ${sub.questions.dificil.length}</button>
-      <button class="level-chip" data-level="discursivas">Discursivas · ${sub.discursivas.length}</button>
+      <button class="level-chip" data-level="facil" ${facil.length?'':'disabled'}>Fácil · ${facil.length}</button>
+      <button class="level-chip" data-level="medio" ${medio.length?'':'disabled'}>Médio · ${medio.length}</button>
+      <button class="level-chip" data-level="dificil" ${dificil.length?'':'disabled'}>Difícil · ${dificil.length}</button>
+      <button class="level-chip" data-level="discursivas" ${disc.length?'':'disabled'}>Discursivas · ${disc.length}</button>
     </div>
     ${q.history.length?`<div class="callout" style="margin-top:28px"><strong>Últimas tentativas nesta matéria:</strong>
       <ul class="styled-list" style="margin-top:8px">${q.history.slice(-5).reverse().map(a=>`<li>${a.level} — ${a.score}/${a.total} acertos (${Math.round(a.score/a.total*100)}%)</li>`).join('')}</ul></div>`:''}
   </div>`;
   main().querySelectorAll('[data-level]').forEach(b=>b.addEventListener('click',()=>{
     const lv=b.dataset.level;
-    state.quiz[state.subject]={level:lv,i:0,answers:[],finished:false,history:q.history,list: lv==='discursivas'?null:shuffle([...sub.questions[lv]]).map(shuffleOptions)};
+    state.quiz[state.subject]={level:lv,i:0,answers:[],finished:false,history:q.history,list: lv==='discursivas'?null:shuffle([...byAv(sub.questions[lv])]).map(shuffleOptions)};
     pageQuiz();
   }));
+  bindAvTabs(quizIntro);
   postRender();
 }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
@@ -1887,10 +1913,12 @@ function quizResult(){
   postRender();
 }
 function quizDisc(){
-  const DD=S().discursivas;
+  const DD=S().discursivas.filter(d=>(d.av||1)===avOf());
   main().innerHTML = `
   <div class="quiz-intro" style="max-width:790px"><div class="eyebrow">${S().nome} · Discursivas</div><h1>Questões discursivas</h1>
+    ${avTabsHtml()}
     <p class="muted">Escreva sua resposta antes de abrir o modelo.</p>
+    ${DD.length?'':'<p class="muted">Nenhuma discursiva publicada aqui ainda.</p>'}
     ${DD.map((d,i)=>`<div class="disc-card">
       <div style="display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap"><span class="badge badge-medio">${d.nivel}</span><span class="badge">Aula ${d.aula}</span></div>
       <strong>${i+1}. ${d.q}</strong><textarea placeholder="Sua resposta..."></textarea>
@@ -1900,24 +1928,29 @@ function quizDisc(){
       <div class="disc-model" id="disc-${i}">${d.model}</div></div>`).join('')}
     <div style="margin-top:10px"><button class="link-btn" data-go="quiz-reset">← Voltar aos níveis</button></div></div>`;
   main().querySelectorAll('[data-model]').forEach(b=>b.addEventListener('click',()=>{ document.getElementById('disc-'+b.dataset.model).classList.add('show'); b.disabled=true; }));
+  bindAvTabs(quizDisc);
   postRender();
 }
 function pageFlash(){
-  const sub=S(), f=state.flashFilter;
-  const list = f==='todas'?sub.flash:sub.flash.filter(c=>c.aula===+f);
+  const sub=S(), f=state.flashFilter, av=avOf();
+  const avFlash = sub.flash.filter(c=>(c.av||1)===av);
+  const avLessons = sub.lessons.filter(l=>(l.av||1)===av);
+  const list = f==='todas'?avFlash:avFlash.filter(c=>c.aula===+f);
   main().innerHTML = `
   <div class="eyebrow">${sub.nome}</div><h1>Flashcards</h1>
-  <p class="hero-sub">Toque no cartão para revelar a resposta. ${sub.flash.length} cartões no total.</p>
+  ${avTabsHtml()}
+  <p class="hero-sub">Toque no cartão para revelar a resposta. ${avFlash.length} cartões nesta parte.</p>
   <div class="flash-toolbar">
     <button class="level-chip ${f==='todas'?'active':''}" data-filter="todas">Todas</button>
-    ${sub.lessons.map(l=>`<button class="level-chip ${f==String(l.id)?'active':''}" data-filter="${l.id}">Aula ${l.id}</button>`).join('')}
-    <button class="btn btn-ghost btn-sm" id="shuffle-flash">Embaralhar</button></div>
-  <div class="flash-grid">${list.map(c=>`<div class="flashcard"><div class="flashcard-inner">
+    ${avLessons.map(l=>`<button class="level-chip ${f==String(l.id)?'active':''}" data-filter="${l.id}">Aula ${l.id}</button>`).join('')}
+    ${avFlash.length?`<button class="btn btn-ghost btn-sm" id="shuffle-flash">Embaralhar</button>`:''}</div>
+  <div class="flash-grid">${list.length?list.map(c=>`<div class="flashcard"><div class="flashcard-inner">
     <div class="flash-face"><span class="flash-tag">Aula ${c.aula}</span><div>${c.f}</div></div>
-    <div class="flash-face flash-back"><div>${c.b}</div></div></div></div>`).join('')}</div>`;
+    <div class="flash-face flash-back"><div>${c.b}</div></div></div></div>`).join(''):`<p class="muted">Nenhum flashcard publicado aqui ainda.</p>`}</div>`;
   main().querySelectorAll('.flashcard').forEach(el=>el.addEventListener('click',()=>el.classList.toggle('flipped')));
   main().querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{ state.flashFilter=b.dataset.filter; pageFlash(); }));
-  document.getElementById('shuffle-flash').addEventListener('click',()=>{ shuffle(sub.flash); pageFlash(); });
+  const shuf=document.getElementById('shuffle-flash'); if(shuf) shuf.addEventListener('click',()=>{ shuffle(sub.flash); pageFlash(); });
+  bindAvTabs(()=>{ state.flashFilter='todas'; pageFlash(); });
   postRender();
 }
 let charts=[];
@@ -1968,17 +2001,35 @@ function drawCharts(){
 }
 const MM_PALETTE = ['#c9a574','#7fa8c9','#8fbf9f','#c98a8a','#b39ddb','#e0a458','#6fbf9f','#d98cb3'];
 function pageMapa(){
+  const av=avOf();
+  const hasBranches = S().mindmap.children.some(b=>{
+    const m=(b.goto||'').match(/^lesson-(\d+)/);
+    if(!m) return true;
+    const les=S().lessons.find(x=>x.id===+m[1]);
+    return !les || (les.av||1)===av;
+  });
   main().innerHTML = `
   <div class="eyebrow">${S().nome}</div><h1>Mapa mental</h1>
+  ${avTabsHtml()}
+  ${hasBranches?`
   <p class="hero-sub small">Arraste para navegar. Use os botões, a roda do mouse ou dois dedos (pinça) para dar zoom. Clique no círculo com − pra recolher um ramo. Clique num tópico para abrir a parte correspondente da aula.</p>
   <div class="mindmap-wrap">
     <div class="mindmap-controls"><button class="icon-btn" id="mm-in">+</button><button class="icon-btn" id="mm-out">−</button>
     <button class="icon-btn" id="mm-reset" title="Centralizar">${ic('frame')}</button></div>
-    <div class="mindmap-viewport" id="mm-vp"><svg id="mm-svg"><g id="mm-g"></g></svg></div></div>`;
-  buildMindmap(); postRender();
+    <div class="mindmap-viewport" id="mm-vp"><svg id="mm-svg"><g id="mm-g"></g></svg></div></div>`:`<p class="muted">Mapa mental da ${state.av[state.subject]==='av2'?'AV2':'AV1'} ainda não foi publicado aqui.</p>`}`;
+  if(hasBranches) buildMindmap();
+  bindAvTabs(pageMapa); postRender();
 }
 function buildMindmap(){
-  const MM=S().mindmap, g=document.getElementById('mm-g'), svg=document.getElementById('mm-svg'), vp=document.getElementById('mm-vp');
+  const av=avOf();
+  const MM_FULL=S().mindmap;
+  const MM={...MM_FULL, children: MM_FULL.children.filter(b=>{
+    const m=(b.goto||'').match(/^lesson-(\d+)/);
+    if(!m) return true;
+    const les=S().lessons.find(x=>x.id===+m[1]);
+    return !les || (les.av||1)===av;
+  })};
+  const g=document.getElementById('mm-g'), svg=document.getElementById('mm-svg'), vp=document.getElementById('mm-vp');
   const collapsed=new Set();
   const VB0={x:0,y:0,w:1040,h:860}; let vb={...VB0};
   const MIN_W=240, MAX_W=2600;
